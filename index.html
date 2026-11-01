@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assist - Panel de Asistencia Remota</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 font-sans">
+
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- Encabezado -->
+        <header class="bg-indigo-600 text-white p-6 rounded-2xl shadow-lg mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">Assist 📱</h1>
+                <p class="text-indigo-200 text-sm">Panel de Control - Asistencia a Adultos Mayores</p>
+            </div>
+            <span class="bg-green-500 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider">Sistema Activo</span>
+        </header>
+
+        <!-- Grid Principal (Responsive) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Tarjeta 1: Simular Botón de Ayuda -->
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 mb-2">🆘 Simular Alerta de Ayuda</h2>
+                    <p class="text-slate-600 text-sm mb-4">Simula que el adulto mayor presionó el botón de asistencia.</p>
+                    
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">ID del Adulto Mayor</label>
+                    <input type="number" id="adultoId" value="2" class="w-full p-2 border rounded-lg mb-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                
+                <button type="button" onclick="pedirAyuda()" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow cursor-pointer">
+                    Pedir Ayuda 🚨
+                </button>
+            </div>
+
+            <!-- Tarjeta 2: Generar QR / Vínculo -->
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 mb-2">🔗 Vincular Dispositivos (HU-01)</h2>
+                    <p class="text-slate-600 text-sm mb-4">Genera el código único de vinculación segura.</p>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <div class="w-1/2">
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">ID Familiar</label>
+                            <input type="number" id="famId" value="1" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">ID Adulto</label>
+                            <input type="number" id="adId" value="2" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="button" onclick="generarQR()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow mb-4 cursor-pointer">
+                        Generar Código QR 📱
+                    </button>
+
+                    <!-- CONTENEDOR DEL QR -->
+                    <div id="qrContainer" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <p class="text-xs font-semibold text-slate-500 mb-2">Escanea para Vincular:</p>
+                        <img id="qrImage" src="" alt="Código QR de Vinculación" class="w-32 h-32 object-contain rounded-lg shadow-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 3: Crear Nuevo Usuario (Responsive a ancho completo) -->
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 md:col-span-2">
+                <h2 class="text-lg font-bold text-slate-800 mb-2">👤 Registrar Nuevo Usuario</h2>
+                <p class="text-slate-600 text-sm mb-4">Agrega nuevos familiares o adultos mayores a la base de datos de SQLite.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre</label>
+                        <input type="text" id="nuevoNombre" placeholder="Ej: Roberto (Abuelo)" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Email</label>
+                        <input type="email" id="nuevoEmail" placeholder="correo@test.com" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Rol</label>
+                        <select id="nuevoRol" class="w-full p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="adulto_mayor">Adulto Mayor</option>
+                            <option value="familiar">Familiar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="button" onclick="crearUsuario()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow cursor-pointer">
+                    Guardar Usuario en la Base de Datos ➕
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Consola de Respuestas de la API -->
+        <div class="mt-6 bg-slate-900 text-green-400 p-5 rounded-2xl shadow-inner font-mono text-xs overflow-x-auto">
+            <p class="text-slate-400 mb-1">// Consola de Respuestas de la API:</p>
+            <pre id="resultado" class="whitespace-pre-wrap">Esperando acción...</pre>
+        </div>
+    </div>
+
+    <!-- Script de conexión con la API -->
+    <script>
+        const API_URL = "http://localhost:8000";
+
+        async function pedirAyuda() {
+            const id = document.getElementById('adultoId').value;
+            document.getElementById('resultado').innerText = "Procesando solicitud de ayuda...";
+            
+            try {
+                const response = await fetch(`${API_URL}/solicitudes/pedir-ayuda/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario_id: parseInt(id) })
+                });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    document.getElementById('resultado').innerText = "⚠️ ERROR:\n" + JSON.stringify(data, null, 2);
+                    return;
+                }
+                document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('resultado').innerText = "❌ Error de conexión con la API.";
+            }
+        }
+
+        async function generarQR() {
+            const fam = document.getElementById('famId').value;
+            const ad = document.getElementById('adId').value;
+            document.getElementById('resultado').innerText = "Generando código QR y vínculo...";
+
+            try {
+                const response = await fetch(`${API_URL}/vinculos/generar-qr/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ familiar_id: parseInt(fam), adulto_id: parseInt(ad) })
+                });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    document.getElementById('resultado').innerText = "⚠️ ERROR:\n" + JSON.stringify(data, null, 2);
+                    return;
+                }
+
+                document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
+
+                if (data.qr_imagen_base64) {
+                    const qrImg = document.getElementById('qrImage');
+                    const qrContainer = document.getElementById('qrContainer');
+                    qrImg.src = `data:image/png;base64,${data.qr_imagen_base64}`;
+                    qrContainer.classList.remove('hidden');
+                }
+            } catch (error) {
+                document.getElementById('resultado').innerText = "❌ Error de conexión con la API.";
+            }
+        }
+
+        async function crearUsuario() {
+            const nombre = document.getElementById('nuevoNombre').value;
+            const email = document.getElementById('nuevoEmail').value;
+            const rol = document.getElementById('nuevoRol').value;
+
+            if (!nombre || !email) {
+                alert("Por favor completa el nombre y el correo electrónico.");
+                return;
+            }
+
+            document.getElementById('resultado').innerText = "Registrando usuario...";
+
+            try {
+                const response = await fetch(`${API_URL}/usuarios/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, email, rol })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    document.getElementById('resultado').innerText = "⚠️ ERROR:\n" + JSON.stringify(data, null, 2);
+                    return;
+                }
+
+                document.getElementById('resultado').innerText = "✅ Usuario creado con éxito:\n" + JSON.stringify(data, null, 2);
+                
+                // Limpiar campos
+                document.getElementById('nuevoNombre').value = '';
+                document.getElementById('nuevoEmail').value = '';
+            } catch (error) {
+                document.getElementById('resultado').innerText = "❌ Error de conexión con la API.";
+            }
+        }
+    </script>
+</body>
+</html>
