@@ -1,0 +1,62 @@
+:root{
+  --ink:#12303B; --ink-soft:#4A6670; --paper:#EEF3F2; --card:#FFFFFF;
+  --line:#C9D8D6; --permit:#1F7A4D; --permit-dark:#17613D;
+  --stop:#B3261E; --wait:#B7791F;
+  --font:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font);font-size:1.125rem;line-height:1.5;color:var(--ink);background:var(--paper);min-height:100dvh}
+.app{max-width:480px;min-height:100dvh;margin:0 auto;display:flex;flex-direction:column;background:var(--paper)}
+.top{display:flex;justify-content:space-between;align-items:center;padding:calc(14px + env(safe-area-inset-top)) 20px 14px;background:var(--ink);color:#fff}
+.brand{font-weight:700;font-size:1.25rem;letter-spacing:.01em}
+.who{font-size:.95rem;opacity:.85}
+#screen{flex:1;display:flex;flex-direction:column;padding:24px 20px calc(24px + env(safe-area-inset-bottom))}
+
+.stack{display:flex;flex-direction:column;gap:20px;flex:1}
+.center{align-items:center;text-align:center;justify-content:center}
+h1{font-size:1.9rem;line-height:1.2;font-weight:700}
+.lead{color:var(--ink-soft)}
+
+/* Pantalla de consentimiento */
+.request{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:4px}
+.avatar{width:76px;height:76px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:2.1rem;font-weight:700}
+.link{flex:0 0 36px;height:0;border-top:4px dotted var(--wait)}
+.phone{width:52px;height:84px;border:4px solid var(--ink);border-radius:12px;display:grid;place-items:center;background:var(--card)}
+.phone svg{width:26px;height:26px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.phone.on{border-color:var(--permit)} .phone.on svg{stroke:var(--permit)}
+
+.rules{list-style:none;padding:0;background:var(--card);border:2px solid var(--line);border-radius:16px}
+.rules li{display:flex;gap:14px;align-items:flex-start;padding:14px 16px}
+.rules li+li{border-top:2px solid var(--line)}
+.rules .ic{flex:0 0 28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1rem;color:#fff;margin-top:1px}
+.ic.yes{background:var(--permit)} .ic.no{background:var(--ink-soft)}
+
+.actions{display:flex;flex-direction:column;gap:12px;margin-top:auto}
+.btn{font:inherit;font-weight:700;font-size:1.25rem;min-height:68px;border-radius:16px;border:3px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer;padding:12px 20px;width:100%}
+.btn:active{transform:scale(.985)}
+.btn.permit{background:var(--permit);border-color:var(--permit);color:#fff}
+.btn.permit:hover{background:var(--permit-dark)}
+.btn.stop{background:var(--stop);border-color:var(--stop);color:#fff}
+.btn[disabled]{opacity:.6;cursor:wait}
+:focus-visible{outline:4px solid #1B6FD1;outline-offset:3px}
+
+/* Sesión activa */
+.live{display:flex;align-items:center;gap:12px;background:var(--permit);color:#fff;padding:16px;border-radius:16px;font-weight:700}
+.dot{width:14px;height:14px;border-radius:50%;background:#fff;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+.status{display:inline-flex;align-items:center;gap:10px;justify-content:center;color:var(--ink-soft)}
+.status .dot{background:var(--wait)}
+.error{background:#FBE9E7;border:2px solid var(--stop);border-radius:16px;padding:16px}
+
+/* Modo prueba */
+.demo{margin:0 20px calc(20px + env(safe-area-inset-bottom));border:2px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:.95rem;color:var(--ink-soft)}
+.demo summary{cursor:pointer;font-weight:700}
+.demo-row{display:flex;gap:8px;margin-top:10px}
+.demo input{width:90px;font:inherit;padding:10px;border:2px solid var(--line);border-radius:10px}
+.demo button{flex:1;font:inherit;font-weight:700;border:2px solid var(--ink);background:var(--card);border-radius:10px;padding:10px;cursor:pointer}
+.demo-msg{margin-top:8px;min-height:1.2em}
+
+@media (prefers-reduced-motion:reduce){.dot{animation:none}.btn:active{transform:none}}
+[tabindex="-1"]:focus{outline:none}
