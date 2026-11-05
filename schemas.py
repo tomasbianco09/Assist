@@ -16,3 +16,6 @@ class SolicitudCreate(BaseModel):
 class SesionRemotaCreate(BaseModel):
     vinculo_id: int
     estado: str = "pendiente" # pendiente, aceptada, rechazada, finalizada
+
+class IngresoRequest(BaseModel):
+    email: str

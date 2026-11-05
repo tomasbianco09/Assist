@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from sqlalchemy.orm import Session
 import uuid
 import qrcode
@@ -57,7 +60,6 @@ def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db))
     return {"id": nuevo_usuario.id, "nombre": nuevo_usuario.nombre, "rol": nuevo_usuario.rol, "mensaje": "Usuario creado con éxito"}
 
 # 2. Endpoint para generar el Código QR de Vinculación (HU-01)
-@app.post("/vinculos/generar-qr/")
 @app.post("/vinculos/generar-qr/")
 def generar_qr_vinculo(vinculo: schemas.VinculoCreate, db: Session = Depends(get_db)):
     # Buscamos a los usuarios por su ID
@@ -166,6 +168,8 @@ def responder_sesion(sesion_id: int, aceptar: bool, db: Session = Depends(get_db
     sesion = db.query(models.SesionRemotaModel).filter(models.SesionRemotaModel.id == sesion_id).first()
     if not sesion:
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    if sesion.estado != "pendiente_consentimiento":
+        raise HTTPException(status_code=409, detail=f"La solicitud ya fue respondida (estado: {sesion.estado})")
     
     if aceptar:
         sesion.estado = "activa"
@@ -176,3 +180,96 @@ def responder_sesion(sesion_id: int, aceptar: bool, db: Session = Depends(get_db
     
     db.commit()
     return {"sesion_id": sesion.id, "estado": sesion.estado, "mensaje": mensaje}
+
+# ==========================================
+# Ingreso y salida de la cuenta (app móvil)
+# ==========================================
+# Sprint 1 todavía no tiene contraseñas: se ingresa con el email registrado.
+@app.get("/usuarios/{usuario_id}")
+def obtener_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    usuario = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return {"id": usuario.id, "nombre": usuario.nombre, "email": usuario.email, "rol": usuario.rol}
+
+@app.post("/usuarios/ingresar/")
+def ingresar(ingreso: schemas.IngresoRequest, db: Session = Depends(get_db)):
+    email = ingreso.email.strip().lower()
+    usuario = db.query(models.UsuarioModel).filter(models.UsuarioModel.email.ilike(email)).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="No encontramos una cuenta con ese correo")
+    return {"id": usuario.id, "nombre": usuario.nombre, "email": usuario.email, "rol": usuario.rol}
+
+@app.post("/usuarios/{usuario_id}/salir/")
+def salir(usuario_id: int, db: Session = Depends(get_db)):
+    # Al salir no puede quedar nada abierto: se cortan las sesiones activas
+    # y se rechazan las solicitudes que el adulto mayor no llegó a responder.
+    usuario = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    columna = models.VinculoModel.adulto_id if usuario.rol == "adulto_mayor" else models.VinculoModel.familiar_id
+    sesiones = (
+        db.query(models.SesionRemotaModel)
+        .join(models.VinculoModel, models.SesionRemotaModel.vinculo_id == models.VinculoModel.id)
+        .filter(columna == usuario_id)
+        .filter(models.SesionRemotaModel.estado.in_(["pendiente_consentimiento", "activa"]))
+        .all()
+    )
+    for s in sesiones:
+        s.estado = "rechazada" if s.estado == "pendiente_consentimiento" else "finalizada"
+    db.commit()
+    return {"mensaje": "Sesión cerrada", "sesiones_cerradas": len(sesiones)}
+
+# ==========================================
+# HU-03: consultas y fin de la sesión remota
+# ==========================================
+@app.get("/sesiones/pendientes/{adulto_id}")
+def sesiones_pendientes(adulto_id: int, db: Session = Depends(get_db)):
+    filas = (
+        db.query(models.SesionRemotaModel, models.UsuarioModel)
+        .join(models.VinculoModel, models.SesionRemotaModel.vinculo_id == models.VinculoModel.id)
+        .join(models.UsuarioModel, models.VinculoModel.familiar_id == models.UsuarioModel.id)
+        .filter(models.VinculoModel.adulto_id == adulto_id)
+        .filter(models.SesionRemotaModel.estado.in_(["pendiente_consentimiento", "activa"]))
+        .order_by(models.SesionRemotaModel.id.desc())
+        .all()
+    )
+    return [
+        {"sesion_id": s.id, "vinculo_id": s.vinculo_id, "estado": s.estado, "familiar_nombre": f.nombre}
+        for s, f in filas
+    ]
+
+@app.get("/sesiones/{sesion_id}")
+def obtener_sesion(sesion_id: int, db: Session = Depends(get_db)):
+    sesion = db.query(models.SesionRemotaModel).filter(models.SesionRemotaModel.id == sesion_id).first()
+    if not sesion:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    return {"sesion_id": sesion.id, "vinculo_id": sesion.vinculo_id, "estado": sesion.estado}
+
+@app.put("/sesiones/{sesion_id}/finalizar/")
+def finalizar_sesion(sesion_id: int, db: Session = Depends(get_db)):
+    # La puede cortar cualquiera de los dos: el adulto mayor o el familiar.
+    sesion = db.query(models.SesionRemotaModel).filter(models.SesionRemotaModel.id == sesion_id).first()
+    if not sesion:
+        raise HTTPException(status_code=404, detail="Sesión no encontrada")
+    if sesion.estado not in ("pendiente_consentimiento", "activa"):
+        raise HTTPException(status_code=409, detail=f"La sesión ya está {sesion.estado}")
+    sesion.estado = "finalizada"
+    db.commit()
+    return {"sesion_id": sesion.id, "estado": sesion.estado, "mensaje": "Sesión finalizada."}
+
+# Panel de pruebas: también se puede abrir con doble clic en index.html.
+# Se sirven solo estos dos archivos (no la carpeta, que tiene assist.db y el código).
+BASE_DIR = Path(__file__).parent
+
+@app.get("/panel", include_in_schema=False)
+def panel():
+    return FileResponse(BASE_DIR / "index.html")
+
+@app.get("/panel.css", include_in_schema=False)
+def panel_css():
+    return FileResponse(BASE_DIR / "panel.css")
+
+# Interfaz del celular del adulto mayor: http://localhost:8000/mobile/
+app.mount("/mobile", StaticFiles(directory=BASE_DIR / "mobile", html=True), name="mobile")

@@ -2,199 +2,306 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assist - Panel de Asistencia Remota</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="text-scale" content="scale">
+    <title>Assist · Panel de pruebas</title>
+    <script>
+        (function () {
+            var pref = null;
+            try { pref = localStorage.getItem('assist_contraste'); } catch (e) {}
+            var alto = pref ? pref === 'alto' : matchMedia('(prefers-contrast: more)').matches;
+            document.documentElement.dataset.contrast = alto ? 'high' : 'normal';
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
+    <link rel="stylesheet" href="panel.css">
 </head>
-<body class="bg-slate-100 font-sans">
-
-    <div class="max-w-4xl mx-auto p-6">
-        <!-- Encabezado -->
-        <header class="bg-indigo-600 text-white p-6 rounded-2xl shadow-lg mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold">Assist 📱</h1>
-                <p class="text-indigo-200 text-sm">Panel de Control - Asistencia a Adultos Mayores</p>
-            </div>
-            <span class="bg-green-500 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider">Sistema Activo</span>
-        </header>
-
-        <!-- Grid Principal (Responsive) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Tarjeta 1: Simular Botón de Ayuda -->
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col justify-between">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-800 mb-2">🆘 Simular Alerta de Ayuda</h2>
-                    <p class="text-slate-600 text-sm mb-4">Simula que el adulto mayor presionó el botón de asistencia.</p>
-                    
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">ID del Adulto Mayor</label>
-                    <input type="number" id="adultoId" value="2" class="w-full p-2 border rounded-lg mb-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                </div>
-                
-                <button type="button" onclick="pedirAyuda()" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow cursor-pointer">
-                    Pedir Ayuda 🚨
+<body>
+    <header class="top">
+        <div class="top-in">
+            <span class="brand">
+                <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9"/><circle cx="12.5" cy="16" r="6"/><circle cx="19.5" cy="16" r="6"/></svg>
+                Assist
+            </span>
+            <div class="top-actions">
+                <span class="api-state" id="apiState"><span class="dot" aria-hidden="true"></span><span id="apiText">Buscando la API…</span></span>
+                <button class="chip" id="hcSwitch" type="button" role="switch" aria-checked="false">
+                    <span class="track" aria-hidden="true"><span class="knob"></span></span>
+                    Alto contraste
                 </button>
+                <a class="chip" href="http://localhost:8000/mobile/?demo=1" target="_blank" rel="noopener">
+                    Abrir app del celular
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+                </a>
             </div>
-
-            <!-- Tarjeta 2: Generar QR / Vínculo -->
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 flex flex-col justify-between">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-800 mb-2">🔗 Vincular Dispositivos (HU-01)</h2>
-                    <p class="text-slate-600 text-sm mb-4">Genera el código único de vinculación segura.</p>
-                    
-                    <div class="flex gap-2 mb-4">
-                        <div class="w-1/2">
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">ID Familiar</label>
-                            <input type="number" id="famId" value="1" class="w-full p-2 border rounded-lg text-sm">
-                        </div>
-                        <div class="w-1/2">
-                            <label class="block text-xs font-semibold text-slate-500 mb-1">ID Adulto</label>
-                            <input type="number" id="adId" value="2" class="w-full p-2 border rounded-lg text-sm">
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <button type="button" onclick="generarQR()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow mb-4 cursor-pointer">
-                        Generar Código QR 📱
-                    </button>
-
-                    <!-- CONTENEDOR DEL QR -->
-                    <div id="qrContainer" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                        <p class="text-xs font-semibold text-slate-500 mb-2">Escanea para Vincular:</p>
-                        <img id="qrImage" src="" alt="Código QR de Vinculación" class="w-32 h-32 object-contain rounded-lg shadow-sm">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tarjeta 3: Crear Nuevo Usuario (Responsive a ancho completo) -->
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 md:col-span-2">
-                <h2 class="text-lg font-bold text-slate-800 mb-2">👤 Registrar Nuevo Usuario</h2>
-                <p class="text-slate-600 text-sm mb-4">Agrega nuevos familiares o adultos mayores a la base de datos de SQLite.</p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre</label>
-                        <input type="text" id="nuevoNombre" placeholder="Ej: Roberto (Abuelo)" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Email</label>
-                        <input type="email" id="nuevoEmail" placeholder="correo@test.com" class="w-full p-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Rol</label>
-                        <select id="nuevoRol" class="w-full p-2 border rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="adulto_mayor">Adulto Mayor</option>
-                            <option value="familiar">Familiar</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button type="button" onclick="crearUsuario()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow cursor-pointer">
-                    Guardar Usuario en la Base de Datos ➕
-                </button>
-            </div>
-
         </div>
+    </header>
 
-        <!-- Consola de Respuestas de la API -->
-        <div class="mt-6 bg-slate-900 text-green-400 p-5 rounded-2xl shadow-inner font-mono text-xs overflow-x-auto">
-            <p class="text-slate-400 mb-1">// Consola de Respuestas de la API:</p>
-            <pre id="resultado" class="whitespace-pre-wrap">Esperando acción...</pre>
+    <div class="page">
+        <section class="intro">
+            <p class="kicker">Panel de pruebas · Sprint 1</p>
+            <h1>Lo que hace el familiar, paso a paso.</h1>
+            <p class="lead">Cada bloque llama a un endpoint real de la API y deja la respuesta en el registro. El orden es el de una demo: registrar a las dos personas, vincularlas y probar la asistencia.</p>
+        </section>
+
+        <div class="layout">
+            <main class="steps">
+
+                <!-- 01 · Registrar -->
+                <form class="card" id="formUsuario" novalidate>
+                    <header class="card-head">
+                        <span class="num" aria-hidden="true">01</span>
+                        <div>
+                            <h2>Registrar a una persona</h2>
+                            <p>Agrega familiares o adultos mayores a la base de datos.</p>
+                        </div>
+                    </header>
+                    <div class="grid-3">
+                        <div class="field-wrap">
+                            <label for="nuevoNombre">Nombre</label>
+                            <input class="field" type="text" id="nuevoNombre" placeholder="Rosa Fernández" autocomplete="off">
+                        </div>
+                        <div class="field-wrap">
+                            <label for="nuevoEmail">Correo</label>
+                            <input class="field" type="email" id="nuevoEmail" placeholder="rosa@correo.com" autocomplete="off">
+                        </div>
+                        <fieldset class="field-wrap">
+                            <legend>Rol</legend>
+                            <div class="seg">
+                                <label><input type="radio" name="nuevoRol" value="adulto_mayor" checked><span>Adulto mayor</span></label>
+                                <label><input type="radio" name="nuevoRol" value="familiar"><span>Familiar</span></label>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <button class="btn primary" type="submit">Guardar persona</button>
+                </form>
+
+                <!-- 02 · Vincular -->
+                <form class="card" id="formVinculo" novalidate>
+                    <header class="card-head">
+                        <span class="num" aria-hidden="true">02</span>
+                        <div>
+                            <h2>Vincular los celulares <small>HU-01</small></h2>
+                            <p>Genera el código QR que el adulto mayor escanea para aceptar al familiar.</p>
+                        </div>
+                    </header>
+                    <div class="grid-2">
+                        <div class="field-wrap">
+                            <label for="famId">ID del familiar</label>
+                            <input class="field" type="number" id="famId" value="1" min="1">
+                        </div>
+                        <div class="field-wrap">
+                            <label for="adId">ID del adulto mayor</label>
+                            <input class="field" type="number" id="adId" value="2" min="1">
+                        </div>
+                    </div>
+                    <button class="btn primary" type="submit">Generar código QR</button>
+                    <figure class="qr" id="qrContainer" hidden>
+                        <img id="qrImage" src="" alt="Código QR de vinculación">
+                        <figcaption>Escanéalo desde el celular del adulto mayor.<br><code id="qrToken"></code></figcaption>
+                    </figure>
+                </form>
+
+                <!-- 03 · Ayuda -->
+                <form class="card" id="formAyuda" novalidate>
+                    <header class="card-head">
+                        <span class="num" aria-hidden="true">03</span>
+                        <div>
+                            <h2>Simular un pedido de ayuda <small>HU-02</small></h2>
+                            <p>Como si el adulto mayor tocara el botón “Pedir ayuda”.</p>
+                        </div>
+                    </header>
+                    <div class="field-wrap narrow">
+                        <label for="adultoId">ID del adulto mayor</label>
+                        <input class="field" type="number" id="adultoId" value="2" min="1">
+                    </div>
+                    <button class="btn alert" type="submit">Enviar pedido de ayuda</button>
+                </form>
+
+                <!-- 04 · Ver pantalla -->
+                <form class="card" id="formSesion" novalidate>
+                    <header class="card-head">
+                        <span class="num" aria-hidden="true">04</span>
+                        <div>
+                            <h2>Ver la pantalla con permiso <small>HU-03</small></h2>
+                            <p>El familiar pide ver la pantalla; el adulto mayor acepta o rechaza en su celular.</p>
+                        </div>
+                    </header>
+                    <div class="field-wrap narrow">
+                        <label for="vinculoId">ID del vínculo</label>
+                        <input class="field" type="number" id="vinculoId" value="1" min="1">
+                    </div>
+                    <button class="btn primary" type="submit" id="pedirSesionBtn">Pedir ver la pantalla</button>
+
+                    <div class="session" id="sessionBox" hidden aria-live="polite">
+                        <div class="session-state">
+                            <span class="badge" id="sessionBadge"></span>
+                            <span id="sessionText"></span>
+                        </div>
+                        <!-- El familiar también puede cortar: no depende solo del adulto mayor. -->
+                        <button class="btn stop" type="button" id="terminarBtn">Terminar sesión</button>
+                    </div>
+                </form>
+            </main>
+
+            <aside class="log" aria-labelledby="logTitle">
+                <div class="log-head">
+                    <h2 id="logTitle">Registro de la API</h2>
+                    <button class="link-btn" type="button" id="limpiarLog">Limpiar</button>
+                </div>
+                <ol class="log-list" id="resultado" aria-live="polite">
+                    <li class="log-empty">Todavía no hay respuestas. Usa cualquiera de los pasos.</li>
+                </ol>
+            </aside>
         </div>
     </div>
 
-    <!-- Script de conexión con la API -->
     <script>
         const API_URL = "http://localhost:8000";
+        const $log = document.getElementById('resultado');
+        const $ = id => document.getElementById(id);
 
-        async function pedirAyuda() {
-            const id = document.getElementById('adultoId').value;
-            document.getElementById('resultado').innerText = "Procesando solicitud de ayuda...";
-            
+        // --- Registro de respuestas ------------------------------------------
+        function registrar(titulo, data, tipo) {
+            const empty = $log.querySelector('.log-empty');
+            if (empty) empty.remove();
+            const li = document.createElement('li');
+            li.className = 'log-item ' + (tipo || 'ok');
+            const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            li.innerHTML = '<div class="log-meta"><span class="log-tag"></span><time></time></div><pre></pre>';
+            li.querySelector('.log-tag').textContent = titulo;
+            li.querySelector('time').textContent = hora;
+            // Textos muy largos (como la imagen del QR en base64) se recortan para que el registro se pueda leer.
+            const corto = (k, v) => typeof v === 'string' && v.length > 120 ? v.slice(0, 60) + '… (' + v.length + ' caracteres)' : v;
+            li.querySelector('pre').textContent = typeof data === 'string' ? data : JSON.stringify(data, corto, 2);
+            $log.prepend(li);
+        }
+        $('limpiarLog').onclick = () => {
+            $log.innerHTML = '<li class="log-empty">Registro vacío.</li>';
+        };
+
+        async function llamar(titulo, path, options, boton) {
+            if (boton) boton.disabled = true;
             try {
-                const response = await fetch(`${API_URL}/solicitudes/pedir-ayuda/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario_id: parseInt(id) })
-                });
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    document.getElementById('resultado').innerText = "⚠️ ERROR:\n" + JSON.stringify(data, null, 2);
-                    return;
-                }
-                document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
+                const response = await fetch(API_URL + path, options);
+                const data = await response.json().catch(() => ({}));
+                registrar(titulo, data, response.ok ? 'ok' : 'warn');
+                return response.ok ? data : null;
             } catch (error) {
-                document.getElementById('resultado').innerText = "❌ Error de conexión con la API.";
+                registrar(titulo, 'No hay conexión con la API. ¿Está corriendo uvicorn en ' + API_URL + '?', 'err');
+                return null;
+            } finally {
+                if (boton) boton.disabled = false;
             }
         }
+        const post = body => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const submitBtn = form => form.querySelector('button[type="submit"]');
 
-        async function generarQR() {
-            const fam = document.getElementById('famId').value;
-            const ad = document.getElementById('adId').value;
-            document.getElementById('resultado').innerText = "Generando código QR y vínculo...";
-
-            try {
-                const response = await fetch(`${API_URL}/vinculos/generar-qr/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ familiar_id: parseInt(fam), adulto_id: parseInt(ad) })
-                });
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    document.getElementById('resultado').innerText = "⚠️ ERROR:\n" + JSON.stringify(data, null, 2);
-                    return;
-                }
-
-                document.getElementById('resultado').innerText = JSON.stringify(data, null, 2);
-
-                if (data.qr_imagen_base64) {
-                    const qrImg = document.getElementById('qrImage');
-                    const qrContainer = document.getElementById('qrContainer');
-                    qrImg.src = `data:image/png;base64,${data.qr_imagen_base64}`;
-                    qrContainer.classList.remove('hidden');
-                }
-            } catch (error) {
-                document.getElementById('resultado').innerText = "❌ Error de conexión con la API.";
-            }
-        }
-
-        async function crearUsuario() {
-            const nombre = document.getElementById('nuevoNombre').value;
-            const email = document.getElementById('nuevoEmail').value;
-            const rol = document.getElementById('nuevoRol').value;
-
+        // --- 01 · Registrar ---------------------------------------------------
+        $('formUsuario').onsubmit = async ev => {
+            ev.preventDefault();
+            const nombre = $('nuevoNombre').value.trim();
+            const email = $('nuevoEmail').value.trim();
+            const rol = document.querySelector('input[name="nuevoRol"]:checked').value;
             if (!nombre || !email) {
-                alert("Por favor completa el nombre y el correo electrónico.");
+                registrar('Registrar', 'Completa el nombre y el correo.', 'warn');
+                (nombre ? $('nuevoEmail') : $('nuevoNombre')).focus();
                 return;
             }
+            const data = await llamar('Registrar', '/usuarios/', post({ nombre, email, rol }), submitBtn(ev.target));
+            if (data) { $('nuevoNombre').value = ''; $('nuevoEmail').value = ''; }
+        };
 
-            document.getElementById('resultado').innerText = "Registrando usuario...";
-
-            try {
-                const response = await fetch(`${API_URL}/usuarios/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, email, rol })
-                });
-                const data = await response.json();
-
-                if (!response.ok) {
-                    document.getElementById('resultado').innerText = "⚠️ ERROR:\n" + JSON.stringify(data, null, 2);
-                    return;
-                }
-
-                document.getElementById('resultado').innerText = "✅ Usuario creado con éxito:\n" + JSON.stringify(data, null, 2);
-                
-                // Limpiar campos
-                document.getElementById('nuevoNombre').value = '';
-                document.getElementById('nuevoEmail').value = '';
-            } catch (error) {
-                document.getElementById('resultado').innerText = "❌ Error de conexión con la API.";
+        // --- 02 · Vincular ----------------------------------------------------
+        $('formVinculo').onsubmit = async ev => {
+            ev.preventDefault();
+            const body = { familiar_id: parseInt($('famId').value, 10), adulto_id: parseInt($('adId').value, 10) };
+            const data = await llamar('Vincular', '/vinculos/generar-qr/', post(body), submitBtn(ev.target));
+            if (data && data.qr_imagen_base64) {
+                $('qrImage').src = `data:image/png;base64,${data.qr_imagen_base64}`;
+                $('qrToken').textContent = data.codigo_token;
+                $('qrContainer').hidden = false;
             }
+        };
+
+        // --- 03 · Pedir ayuda -------------------------------------------------
+        $('formAyuda').onsubmit = ev => {
+            ev.preventDefault();
+            llamar('Pedir ayuda', '/solicitudes/pedir-ayuda/', post({ usuario_id: parseInt($('adultoId').value, 10) }), submitBtn(ev.target));
+        };
+
+        // --- 04 · Sesión remota -----------------------------------------------
+        const ESTADOS = {
+            pendiente_consentimiento: ['Esperando', 'Esperando que el adulto mayor acepte en su celular…', 'wait'],
+            activa: ['Activa', 'Estás viendo la pantalla. Solo puedes mirar.', 'live'],
+            rechazada: ['Rechazada', 'El adulto mayor no aceptó. No se compartió nada.', 'off'],
+            finalizada: ['Finalizada', 'La sesión terminó.', 'off']
+        };
+        let sesionId = null, sesionTimer = null, ultimoEstado = null;
+
+        function pintarSesion(estado) {
+            const [badge, texto, tono] = ESTADOS[estado] || [estado, '', 'off'];
+            $('sessionBox').hidden = false;
+            $('sessionBadge').textContent = badge;
+            $('sessionBadge').className = 'badge ' + tono;
+            $('sessionText').textContent = texto;
+            const abierta = estado === 'pendiente_consentimiento' || estado === 'activa';
+            $('terminarBtn').hidden = !abierta;
+            $('terminarBtn').textContent = estado === 'activa' ? 'Terminar sesión' : 'Cancelar solicitud';
+            $('pedirSesionBtn').disabled = abierta;
+            if (!abierta) { clearInterval(sesionTimer); sesionTimer = null; }
         }
+
+        async function seguirSesion() {
+            try {
+                const r = await fetch(`${API_URL}/sesiones/${sesionId}`);
+                const data = await r.json();
+                if (r.ok && data.estado !== ultimoEstado) {
+                    ultimoEstado = data.estado;
+                    pintarSesion(data.estado);
+                    registrar('Sesión #' + sesionId, data, 'ok');
+                }
+            } catch (e) { /* se reintenta en el próximo ciclo */ }
+        }
+
+        $('formSesion').onsubmit = async ev => {
+            ev.preventDefault();
+            const data = await llamar('Pedir ver pantalla', '/sesiones/solicitar/', post({ vinculo_id: parseInt($('vinculoId').value, 10) }), submitBtn(ev.target));
+            if (!data) return;
+            sesionId = data.sesion_id;
+            ultimoEstado = data.estado;
+            pintarSesion(data.estado);
+            clearInterval(sesionTimer);
+            sesionTimer = setInterval(seguirSesion, 2000);
+        };
+
+        $('terminarBtn').onclick = async () => {
+            const data = await llamar('Terminar sesión', `/sesiones/${sesionId}/finalizar/`, { method: 'PUT' }, $('terminarBtn'));
+            if (data) { ultimoEstado = data.estado; pintarSesion(data.estado); }
+        };
+
+        // --- Estado de la API y alto contraste ---------------------------------
+        fetch(API_URL + '/').then(r => {
+            $('apiState').className = 'api-state ' + (r.ok ? 'on' : 'off');
+            $('apiText').textContent = r.ok ? 'API conectada' : 'API con errores';
+        }).catch(() => {
+            $('apiState').className = 'api-state off';
+            $('apiText').textContent = 'API apagada';
+        });
+
+        const $hc = $('hcSwitch');
+        const aplicarContraste = alto => {
+            document.documentElement.dataset.contrast = alto ? 'high' : 'normal';
+            $hc.setAttribute('aria-checked', String(alto));
+        };
+        aplicarContraste(document.documentElement.dataset.contrast === 'high');
+        $hc.onclick = () => {
+            const alto = $hc.getAttribute('aria-checked') !== 'true';
+            aplicarContraste(alto);
+            try { localStorage.setItem('assist_contraste', alto ? 'alto' : 'normal'); } catch (e) {}
+        };
     </script>
 </body>
 </html>
