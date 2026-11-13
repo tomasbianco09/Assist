@@ -1,1 +1,5 @@
-pip install fastapi uvicorn sqlalchemy pydantic qrcode[pil]
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+qrcode[pil]

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="text-scale" content="scale">
-    <title>Assist · Panel de pruebas</title>
+    <title>Assist · Panel Familiar y de Pruebas</title>
     <script>
         (function () {
             var pref = null;
@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <link rel="stylesheet" href="panel.css">
 </head>
 <body>
@@ -31,7 +32,7 @@
                     <span class="track" aria-hidden="true"><span class="knob"></span></span>
                     Alto contraste
                 </button>
-                <a class="chip" href="http://localhost:8000/mobile/?demo=1" target="_blank" rel="noopener">
+                <a class="chip primary-chip" href="http://localhost:8000/mobile/?demo=1" target="_blank" rel="noopener">
                     Abrir app del celular
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
                 </a>
@@ -40,14 +41,50 @@
     </header>
 
     <div class="page">
+        <!-- Banner de Notificaciones Push en Tiempo Real (HU-04 / SCRUM-49) -->
+        <section class="push-banner" id="pushBanner" hidden role="alert" aria-live="assertive">
+            <div class="push-content">
+                <span class="push-badge">SOS · Alerta en tiempo real</span>
+                <p id="pushText">Un adulto mayor solicitó asistencia.</p>
+            </div>
+            <button class="btn primary" type="button" id="atenderPushBtn">Marcar como atendida</button>
+        </section>
+
         <section class="intro">
-            <p class="kicker">Panel de pruebas · Sprint 1</p>
-            <h1>Lo que hace el familiar, paso a paso.</h1>
-            <p class="lead">Cada bloque llama a un endpoint real de la API y deja la respuesta en el registro. El orden es el de una demo: registrar a las dos personas, vincularlas y probar la asistencia.</p>
+            <p class="kicker">Panel de control · Sprint 2</p>
+            <h1>Centro de asistencia para el familiar</h1>
+            <p class="lead">Desde aquí configuras el vínculo familiar y realizas las acciones de asistencia remota. Para probar la experiencia completa, abre la <strong>app del celular</strong> en otra pestaña.</p>
+
+            <!-- Guía rápida de uso paso a paso -->
+            <div class="QuickGuide" aria-label="Guía rápida de cómo funciona Assist">
+                <div class="guide-step">
+                    <span class="guide-num">Paso A</span>
+                    <strong>Registra y vincula (Pasos 01 y 02)</strong>
+                    <p>Crea un usuario <em>Familiar</em> y un <em>Adulto mayor</em> (o usa IDs existentes) y genera su código QR para obtener el <strong>ID del vínculo</strong>.</p>
+                </div>
+                <div class="guide-step">
+                    <span class="guide-num">Paso B</span>
+                    <strong>Abre el celular del adulto mayor</strong>
+                    <p>Haz clic arriba en <strong>“Abrir app del celular”</strong> e ingresa con el correo del adulto mayor para recibir los pedidos en vivo.</p>
+                </div>
+                <div class="guide-step">
+                    <span class="guide-num">Paso C</span>
+                    <strong>Asiste con permiso (Pasos 03 al 06)</strong>
+                    <p>Pide ver la pantalla o la ubicación desde este panel, acepta desde el celular y revisa el historial de auditoría.</p>
+                </div>
+            </div>
         </section>
 
         <div class="layout">
             <main class="steps">
+
+                <!-- ======================================================= -->
+                <!-- FASE 1: CONFIGURACIÓN INICIAL                           -->
+                <!-- ======================================================= -->
+                <div class="phase-header">
+                    <span class="phase-tag">Fase 1 · Configuración única</span>
+                    <p>Registra a las personas y vincula sus dispositivos mediante código QR.</p>
+                </div>
 
                 <!-- 01 · Registrar -->
                 <form class="card" id="formUsuario" novalidate>
@@ -55,27 +92,30 @@
                         <span class="num" aria-hidden="true">01</span>
                         <div>
                             <h2>Registrar a una persona</h2>
-                            <p>Agrega familiares o adultos mayores a la base de datos.</p>
+                            <p>Crea primero un <strong>Familiar</strong> y luego un <strong>Adulto mayor</strong>. Sus IDs se cargarán solos en el paso 02.</p>
                         </div>
                     </header>
                     <div class="grid-3">
                         <div class="field-wrap">
-                            <label for="nuevoNombre">Nombre</label>
+                            <label for="nuevoNombre">Nombre completo</label>
                             <input class="field" type="text" id="nuevoNombre" placeholder="Rosa Fernández" autocomplete="off">
                         </div>
                         <div class="field-wrap">
-                            <label for="nuevoEmail">Correo</label>
+                            <label for="nuevoEmail">Correo electrónico</label>
                             <input class="field" type="email" id="nuevoEmail" placeholder="rosa@correo.com" autocomplete="off">
                         </div>
                         <fieldset class="field-wrap">
-                            <legend>Rol</legend>
+                            <legend>Rol en la app</legend>
                             <div class="seg">
                                 <label><input type="radio" name="nuevoRol" value="adulto_mayor" checked><span>Adulto mayor</span></label>
                                 <label><input type="radio" name="nuevoRol" value="familiar"><span>Familiar</span></label>
                             </div>
                         </fieldset>
                     </div>
-                    <button class="btn primary" type="submit">Guardar persona</button>
+                    <div class="card-actions-row">
+                        <button class="btn primary" type="submit">Guardar persona</button>
+                        <p class="helper-pill" id="ultimoUsuarioCreado" hidden></p>
+                    </div>
                 </form>
 
                 <!-- 02 · Vincular -->
@@ -84,86 +124,165 @@
                         <span class="num" aria-hidden="true">02</span>
                         <div>
                             <h2>Vincular los celulares <small>HU-01</small></h2>
-                            <p>Genera el código QR que el adulto mayor escanea para aceptar al familiar.</p>
+                            <p>Une al familiar con el adulto mayor mediante un código QR y habilita el ID del vínculo para las asistencias.</p>
                         </div>
                     </header>
                     <div class="grid-2">
                         <div class="field-wrap">
-                            <label for="famId">ID del familiar</label>
+                            <label for="famId">ID del familiar <span class="label-hint" id="famHint"></span></label>
                             <input class="field" type="number" id="famId" value="1" min="1">
                         </div>
                         <div class="field-wrap">
-                            <label for="adId">ID del adulto mayor</label>
+                            <label for="adId">ID del adulto mayor <span class="label-hint" id="adHint"></span></label>
                             <input class="field" type="number" id="adId" value="2" min="1">
                         </div>
                     </div>
-                    <button class="btn primary" type="submit">Generar código QR</button>
+                    <button class="btn primary" type="submit">Generar código QR y activar vínculo</button>
                     <figure class="qr" id="qrContainer" hidden>
                         <img id="qrImage" src="" alt="Código QR de vinculación">
-                        <figcaption>Escanéalo desde el celular del adulto mayor.<br><code id="qrToken"></code></figcaption>
+                        <figcaption>
+                            <strong>¡Vínculo #<span id="qrVinculoId"></span> activo!</strong> Ya se copió automáticamente en los pasos 04 y 05.<br>
+                            <span>Token QR: <code id="qrToken"></code></span>
+                        </figcaption>
                     </figure>
                 </form>
 
-                <!-- 03 · Ayuda -->
+                <!-- ======================================================= -->
+                <!-- FASE 2: CENTRO DE ASISTENCIA DIARIA                     -->
+                <!-- ======================================================= -->
+                <div class="phase-header">
+                    <span class="phase-tag">Fase 2 · Asistencia y monitoreo en vivo</span>
+                    <p>Acciones cotidianas entre el familiar y el adulto mayor.</p>
+                </div>
+
+                <!-- Acciones rápidas de visualización y ubicación en 2 columnas -->
+                <div class="assist-grid">
+                    <!-- 04 · Ver pantalla -->
+                    <form class="card" id="formSesion" novalidate>
+                        <header class="card-head">
+                            <span class="num" aria-hidden="true">03</span>
+                            <div>
+                                <h2>Ver la pantalla <small>HU-03</small></h2>
+                                <p>Pide permiso para mirar la pantalla del celular del adulto mayor.</p>
+                            </div>
+                        </header>
+                        <div class="step-flow-hint">
+                            <span><strong>1.</strong> Toca el botón abajo</span> → <span><strong>2.</strong> El adulto acepta en su celular</span>
+                        </div>
+                        <div class="field-wrap narrow">
+                            <label for="vinculoId">ID del vínculo activo</label>
+                            <input class="field" type="number" id="vinculoId" value="1" min="1">
+                        </div>
+                        <button class="btn primary" type="submit" id="pedirSesionBtn">Pedir ver la pantalla</button>
+
+                        <div class="session" id="sessionBox" hidden aria-live="polite">
+                            <div class="session-state">
+                                <span class="badge" id="sessionBadge"></span>
+                                <span id="sessionText"></span>
+                            </div>
+                            <button class="btn stop" type="button" id="terminarBtn">Terminar sesión</button>
+                        </div>
+                    </form>
+
+                    <!-- 05 · Geolocalización bajo Demanda -->
+                    <form class="card" id="formUbicacion" novalidate>
+                        <header class="card-head">
+                            <span class="num" aria-hidden="true">04</span>
+                            <div>
+                                <h2>Pedir ubicación <small>HU-06 · SCRUM-35</small></h2>
+                                <p>Consulta dónde está el adulto mayor para saber que se encuentra a salvo.</p>
+                            </div>
+                        </header>
+                        <div class="step-flow-hint">
+                            <span><strong>1.</strong> Solicita la ubicación</span> → <span><strong>2.</strong> Al aceptar en el celular, se abre el mapa</span>
+                        </div>
+                        <div class="field-wrap narrow">
+                            <label for="vinculoGeoId">ID del vínculo activo</label>
+                            <input class="field" type="number" id="vinculoGeoId" value="1" min="1">
+                        </div>
+                        <button class="btn primary" type="submit" id="pedirGeoBtn">Solicitar ubicación actual</button>
+
+                        <div class="session" id="geoBox" hidden aria-live="polite">
+                            <div class="session-state">
+                                <span class="badge" id="geoBadge"></span>
+                                <span id="geoText"></span>
+                            </div>
+                            <button class="btn stop" type="button" id="terminarGeoBtn">Cerrar ubicación</button>
+                        </div>
+                        <div id="mapContainer" class="map-wrap" hidden>
+                            <div id="map" class="map-canvas" aria-label="Mapa con la ubicación del adulto mayor"></div>
+                            <p class="map-coords" id="mapCoords"></p>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 03 · Ayuda SOS -->
                 <form class="card" id="formAyuda" novalidate>
                     <header class="card-head">
-                        <span class="num" aria-hidden="true">03</span>
+                        <span class="num" aria-hidden="true">05</span>
                         <div>
-                            <h2>Simular un pedido de ayuda <small>HU-02</small></h2>
-                            <p>Como si el adulto mayor tocara el botón “Pedir ayuda”.</p>
+                            <h2>Simular botón de emergencia SOS <small>HU-02 · SCRUM-49</small></h2>
+                            <p>Simula que el adulto mayor tocó <strong>“🚨 Pedir ayuda a mi familia”</strong> en su celular y activa el banner rojo de notificación Push arriba del todo.</p>
                         </div>
                     </header>
-                    <div class="field-wrap narrow">
-                        <label for="adultoId">ID del adulto mayor</label>
-                        <input class="field" type="number" id="adultoId" value="2" min="1">
+                    <div class="card-actions-row">
+                        <div class="field-wrap narrow">
+                            <label for="adultoId">ID del adulto mayor que pide ayuda</label>
+                            <input class="field" type="number" id="adultoId" value="2" min="1">
+                        </div>
+                        <button class="btn alert" type="submit">Disparar alerta SOS de prueba</button>
                     </div>
-                    <button class="btn alert" type="submit">Enviar pedido de ayuda</button>
                 </form>
 
-                <!-- 04 · Ver pantalla -->
-                <form class="card" id="formSesion" novalidate>
+                <!-- 06 · Historial y Auditoría -->
+                <section class="card" id="cardHistorial">
                     <header class="card-head">
-                        <span class="num" aria-hidden="true">04</span>
-                        <div>
-                            <h2>Ver la pantalla con permiso <small>HU-03</small></h2>
-                            <p>El familiar pide ver la pantalla; el adulto mayor acepta o rechaza en su celular.</p>
+                        <span class="num" aria-hidden="true">06</span>
+                        <div class="card-head-flex">
+                            <div>
+                                <h2>Historial y auditoría de sesiones <small>HU-04 · HU-08</small></h2>
+                                <p>Registro transparente con fecha, hora, duración exacta y quién finalizó cada asistencia.</p>
+                            </div>
+                            <button class="btn" type="button" id="refreshHistorialBtn">Actualizar tabla</button>
                         </div>
                     </header>
-                    <div class="field-wrap narrow">
-                        <label for="vinculoId">ID del vínculo</label>
-                        <input class="field" type="number" id="vinculoId" value="1" min="1">
+                    <div class="table-wrap">
+                        <table class="hist-table">
+                            <thead>
+                                <tr>
+                                    <th>Sesión</th>
+                                    <th>Personas (Adulto ← Familiar)</th>
+                                    <th>Inicio</th>
+                                    <th>Duración</th>
+                                    <th>Estado y cierre</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historialBody">
+                                <tr><td colspan="5">Cargando historial…</td></tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <button class="btn primary" type="submit" id="pedirSesionBtn">Pedir ver la pantalla</button>
-
-                    <div class="session" id="sessionBox" hidden aria-live="polite">
-                        <div class="session-state">
-                            <span class="badge" id="sessionBadge"></span>
-                            <span id="sessionText"></span>
-                        </div>
-                        <!-- El familiar también puede cortar: no depende solo del adulto mayor. -->
-                        <button class="btn stop" type="button" id="terminarBtn">Terminar sesión</button>
-                    </div>
-                </form>
+                </section>
             </main>
 
             <aside class="log" aria-labelledby="logTitle">
                 <div class="log-head">
-                    <h2 id="logTitle">Registro de la API</h2>
+                    <h2 id="logTitle">Registro técnico (API)</h2>
                     <button class="link-btn" type="button" id="limpiarLog">Limpiar</button>
                 </div>
                 <ol class="log-list" id="resultado" aria-live="polite">
-                    <li class="log-empty">Todavía no hay respuestas. Usa cualquiera de los pasos.</li>
+                    <li class="log-empty">Todavía no hay respuestas. Sigue los pasos de la izquierda.</li>
                 </ol>
             </aside>
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
         const API_URL = "http://localhost:8000";
         const $log = document.getElementById('resultado');
         const $ = id => document.getElementById(id);
 
-        // --- Registro de respuestas ------------------------------------------
         function registrar(titulo, data, tipo) {
             const empty = $log.querySelector('.log-empty');
             if (empty) empty.remove();
@@ -173,7 +292,6 @@
             li.innerHTML = '<div class="log-meta"><span class="log-tag"></span><time></time></div><pre></pre>';
             li.querySelector('.log-tag').textContent = titulo;
             li.querySelector('time').textContent = hora;
-            // Textos muy largos (como la imagen del QR en base64) se recortan para que el registro se pueda leer.
             const corto = (k, v) => typeof v === 'string' && v.length > 120 ? v.slice(0, 60) + '… (' + v.length + ' caracteres)' : v;
             li.querySelector('pre').textContent = typeof data === 'string' ? data : JSON.stringify(data, corto, 2);
             $log.prepend(li);
@@ -199,7 +317,33 @@
         const post = body => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const submitBtn = form => form.querySelector('button[type="submit"]');
 
-        // --- 01 · Registrar ---------------------------------------------------
+        // --- Actualizar etiquetas de ayuda con los nombres de los IDs ---------
+        async function actualizarNombresIds() {
+            const fId = parseInt($('famId').value, 10);
+            const aId = parseInt($('adId').value, 10);
+            if (fId) {
+                try {
+                    const r = await fetch(`${API_URL}/usuarios/${fId}`);
+                    if (r.ok) {
+                        const u = await r.json();
+                        $('famHint').textContent = `(${u.nombre} · ${u.rol})`;
+                    } else { $('famHint').textContent = ''; }
+                } catch (e) {}
+            }
+            if (aId) {
+                try {
+                    const r = await fetch(`${API_URL}/usuarios/${aId}`);
+                    if (r.ok) {
+                        const u = await r.json();
+                        $('adHint').textContent = `(${u.nombre} · ${u.rol})`;
+                    } else { $('adHint').textContent = ''; }
+                } catch (e) {}
+            }
+        }
+        $('famId').onchange = actualizarNombresIds;
+        $('adId').onchange = actualizarNombresIds;
+
+        // --- 01 · Registrar (Autocompleta el ID según el rol) -----------------
         $('formUsuario').onsubmit = async ev => {
             ev.preventDefault();
             const nombre = $('nuevoNombre').value.trim();
@@ -211,10 +355,23 @@
                 return;
             }
             const data = await llamar('Registrar', '/usuarios/', post({ nombre, email, rol }), submitBtn(ev.target));
-            if (data) { $('nuevoNombre').value = ''; $('nuevoEmail').value = ''; }
+            if (data) {
+                $('nuevoNombre').value = '';
+                $('nuevoEmail').value = '';
+                const pill = $('ultimoUsuarioCreado');
+                pill.hidden = false;
+                pill.textContent = `✓ ${data.nombre} guardado con ID #${data.id} (${data.rol})`;
+                if (data.rol === 'familiar') {
+                    $('famId').value = data.id;
+                } else {
+                    $('adId').value = data.id;
+                    $('adultoId').value = data.id;
+                }
+                actualizarNombresIds();
+            }
         };
 
-        // --- 02 · Vincular ----------------------------------------------------
+        // --- 02 · Vincular (D-05: rellena el vinculo_id automáticamente) ------
         $('formVinculo').onsubmit = async ev => {
             ev.preventDefault();
             const body = { familiar_id: parseInt($('famId').value, 10), adulto_id: parseInt($('adId').value, 10) };
@@ -222,19 +379,61 @@
             if (data && data.qr_imagen_base64) {
                 $('qrImage').src = `data:image/png;base64,${data.qr_imagen_base64}`;
                 $('qrToken').textContent = data.codigo_token;
+                $('qrVinculoId').textContent = data.vinculo_id;
                 $('qrContainer').hidden = false;
+                if (data.vinculo_id) {
+                    $('vinculoId').value = data.vinculo_id;
+                    $('vinculoGeoId').value = data.vinculo_id;
+                }
             }
         };
 
-        // --- 03 · Pedir ayuda -------------------------------------------------
-        $('formAyuda').onsubmit = ev => {
+        // --- 05 · Pedir ayuda y Notificaciones Push (SCRUM-49) ----------------
+        let alertaActualId = null;
+        let ultimaAlertaNotificada = null;
+
+        $('formAyuda').onsubmit = async ev => {
             ev.preventDefault();
-            llamar('Pedir ayuda', '/solicitudes/pedir-ayuda/', post({ usuario_id: parseInt($('adultoId').value, 10) }), submitBtn(ev.target));
+            await llamar('Pedir ayuda', '/solicitudes/pedir-ayuda/', post({ usuario_id: parseInt($('adultoId').value, 10) }), submitBtn(ev.target));
+            verificarAlertasPush();
         };
 
-        // --- 04 · Sesión remota -----------------------------------------------
+        async function verificarAlertasPush() {
+            try {
+                const r = await fetch(`${API_URL}/solicitudes/pendientes/`);
+                if (!r.ok) return;
+                const lista = await r.json();
+                if (lista.length > 0) {
+                    const alerta = lista[0];
+                    alertaActualId = alerta.solicitud_id;
+                    $('pushText').textContent = `¡${alerta.adulto_nombre} presionó el botón de pedir ayuda! (Solicitud #${alerta.solicitud_id})`;
+                    $('pushBanner').hidden = false;
+                    if (ultimaAlertaNotificada !== alerta.solicitud_id) {
+                        ultimaAlertaNotificada = alerta.solicitud_id;
+                        registrar('🔔 Push SOS', alerta, 'warn');
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification("Assist · Alerta de Ayuda", { body: `${alerta.adulto_nombre} necesita asistencia.` });
+                        }
+                    }
+                } else {
+                    $('pushBanner').hidden = true;
+                    alertaActualId = null;
+                }
+            } catch (e) {}
+        }
+
+        $('atenderPushBtn').onclick = async () => {
+            if (!alertaActualId) return;
+            const data = await llamar('Atender alerta', `/solicitudes/${alertaActualId}/atender/`, { method: 'PUT' }, $('atenderPushBtn'));
+            if (data) verificarAlertasPush();
+        };
+
+        setInterval(verificarAlertasPush, 3000);
+        verificarAlertasPush();
+
+        // --- 03 · Sesión remota -----------------------------------------------
         const ESTADOS = {
-            pendiente_consentimiento: ['Esperando', 'Esperando que el adulto mayor acepte en su celular…', 'wait'],
+            pendiente_consentimiento: ['Esperando', 'Ve a la app del celular y toca “Permitir”…', 'wait'],
             activa: ['Activa', 'Estás viendo la pantalla. Solo puedes mirar.', 'live'],
             rechazada: ['Rechazada', 'El adulto mayor no aceptó. No se compartió nada.', 'off'],
             finalizada: ['Finalizada', 'La sesión terminó.', 'off']
@@ -251,7 +450,11 @@
             $('terminarBtn').hidden = !abierta;
             $('terminarBtn').textContent = estado === 'activa' ? 'Terminar sesión' : 'Cancelar solicitud';
             $('pedirSesionBtn').disabled = abierta;
-            if (!abierta) { clearInterval(sesionTimer); sesionTimer = null; }
+            if (!abierta) {
+                clearInterval(sesionTimer);
+                sesionTimer = null;
+                cargarHistorial();
+            }
         }
 
         async function seguirSesion() {
@@ -262,8 +465,9 @@
                     ultimoEstado = data.estado;
                     pintarSesion(data.estado);
                     registrar('Sesión #' + sesionId, data, 'ok');
+                    cargarHistorial();
                 }
-            } catch (e) { /* se reintenta en el próximo ciclo */ }
+            } catch (e) {}
         }
 
         $('formSesion').onsubmit = async ev => {
@@ -273,14 +477,152 @@
             sesionId = data.sesion_id;
             ultimoEstado = data.estado;
             pintarSesion(data.estado);
+            cargarHistorial();
             clearInterval(sesionTimer);
             sesionTimer = setInterval(seguirSesion, 2000);
         };
 
         $('terminarBtn').onclick = async () => {
-            const data = await llamar('Terminar sesión', `/sesiones/${sesionId}/finalizar/`, { method: 'PUT' }, $('terminarBtn'));
-            if (data) { ultimoEstado = data.estado; pintarSesion(data.estado); }
+            const data = await llamar('Terminar sesión', `/sesiones/${sesionId}/finalizar/?autor=familiar`, { method: 'PUT' }, $('terminarBtn'));
+            if (data) {
+                ultimoEstado = data.estado;
+                pintarSesion(data.estado);
+            }
         };
+
+        // --- 04 · Geolocalización bajo Demanda (HU-06 / SCRUM-35) -------------
+        let geoId = null, geoTimer = null, ultimoGeoEstado = null;
+        let leafletMap = null, leafletMarker = null;
+
+        function mostrarMapa(lat, lng, nombre) {
+            $('mapContainer').hidden = false;
+            $('mapCoords').textContent = `📍 Ubicación de ${nombre}: Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
+            setTimeout(() => {
+                if (!leafletMap) {
+                    leafletMap = L.map('map').setView([lat, lng], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(leafletMap);
+                    leafletMarker = L.marker([lat, lng]).addTo(leafletMap);
+                } else {
+                    leafletMap.setView([lat, lng], 15);
+                    leafletMarker.setLatLng([lat, lng]);
+                    leafletMap.invalidateSize();
+                }
+                leafletMarker.bindPopup(`<b>${nombre}</b><br>Ubicación actual verificada`).openPopup();
+            }, 100);
+        }
+
+        function pintarGeo(data) {
+            $('geoBox').hidden = false;
+            const abierta = data.estado === 'pendiente_consentimiento' || data.estado === 'compartida';
+            $('terminarGeoBtn').hidden = !abierta;
+            $('terminarGeoBtn').textContent = data.estado === 'compartida' ? 'Terminar ubicación' : 'Cancelar solicitud';
+
+            if (data.estado === 'pendiente_consentimiento') {
+                $('geoBadge').textContent = 'Esperando';
+                $('geoBadge').className = 'badge wait';
+                $('geoText').textContent = 'Ve a la app del celular y toca “Compartir mi ubicación”…';
+                $('pedirGeoBtn').disabled = true;
+                $('mapContainer').hidden = true;
+            } else if (data.estado === 'compartida') {
+                $('geoBadge').textContent = 'Compartida';
+                $('geoBadge').className = 'badge live';
+                $('geoText').textContent = `${data.adulto_nombre || 'El adulto mayor'} está compartiendo su ubicación.`;
+                $('pedirGeoBtn').disabled = true;
+                clearInterval(geoTimer);
+                mostrarMapa(data.latitud, data.longitud, data.adulto_nombre || 'Adulto Mayor');
+            } else if (data.estado === 'finalizada') {
+                $('geoBadge').textContent = 'Finalizada';
+                $('geoBadge').className = 'badge off';
+                $('geoText').textContent = 'Cerraste la visualización del mapa.';
+                $('pedirGeoBtn').disabled = false;
+                $('mapContainer').hidden = true;
+                clearInterval(geoTimer);
+            } else {
+                $('geoBadge').textContent = 'Rechazada';
+                $('geoBadge').className = 'badge off';
+                $('geoText').textContent = 'El adulto mayor rechazó compartir su ubicación.';
+                $('pedirGeoBtn').disabled = false;
+                $('mapContainer').hidden = true;
+                clearInterval(geoTimer);
+            }
+        }
+
+        async function seguirGeo() {
+            try {
+                const r = await fetch(`${API_URL}/ubicaciones/${geoId}`);
+                const data = await r.json();
+                if (r.ok && data.estado !== ultimoGeoEstado) {
+                    ultimoGeoEstado = data.estado;
+                    pintarGeo(data);
+                    registrar('Ubicación #' + geoId, data, 'ok');
+                }
+            } catch (e) {}
+        }
+
+        $('formUbicacion').onsubmit = async ev => {
+            ev.preventDefault();
+            const data = await llamar('Solicitar ubicación', '/ubicaciones/solicitar/', post({ vinculo_id: parseInt($('vinculoGeoId').value, 10) }), submitBtn(ev.target));
+            if (!data) return;
+            geoId = data.ubicacion_id;
+            ultimoGeoEstado = data.estado;
+            pintarGeo(data);
+            clearInterval(geoTimer);
+            geoTimer = setInterval(seguirGeo, 2000);
+        };
+
+        $('terminarGeoBtn').onclick = async () => {
+            if (!geoId) return;
+            const data = await llamar('Terminar ubicación', `/ubicaciones/${geoId}/finalizar/`, { method: 'PUT' }, $('terminarGeoBtn'));
+            if (data) {
+                ultimoGeoEstado = data.estado;
+                pintarGeo(data);
+            }
+        };
+
+        // --- 06 · Historial y Auditoría (HU-04 / HU-08) -----------------------
+        function formatearDuracion(seg) {
+            if (seg === null || seg === undefined) return 'En curso';
+            if (seg < 60) return `${seg} s`;
+            const m = Math.floor(seg / 60);
+            const r = seg % 60;
+            return `${m} min ${r} s`;
+        }
+
+        function formatearFecha(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+            return d.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function cargarHistorial() {
+            try {
+                const r = await fetch(`${API_URL}/sesiones/historial/`);
+                if (!r.ok) return;
+                const filas = await r.json();
+                const tbody = $('historialBody');
+                if (filas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5">Todavía no hay sesiones registradas.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = filas.map(s => {
+                    const detalleCierre = s.cerrada_por ? ` (${s.cerrada_por.replace('_', ' ')})` : '';
+                    return `<tr>
+                        <td>#${s.sesion_id}</td>
+                        <td><strong>${s.adulto_nombre}</strong> ← ${s.familiar_nombre}</td>
+                        <td>${formatearFecha(s.fecha_inicio)}</td>
+                        <td>${formatearDuracion(s.duracion_segundos)}</td>
+                        <td><span class="hist-status">${s.estado}${detalleCierre}</span></td>
+                    </tr>`;
+                }).join('');
+            } catch (e) {}
+        }
+
+        $('refreshHistorialBtn').onclick = cargarHistorial;
+        cargarHistorial();
+        actualizarNombresIds();
+        setInterval(cargarHistorial, 5000);
 
         // --- Estado de la API y alto contraste ---------------------------------
         fetch(API_URL + '/').then(r => {

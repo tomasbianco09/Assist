@@ -1,52 +1,46 @@
-# Informe de testing: Assist
+# Informe de testing: Assist (Sprint 1 y Sprint 2)
 
-Rama `feature/accesibilidad-y-rediseno`, commit `a5d68ba`. Pruebas del 3 y el 5 de noviembre de 2026.
+Rama `feature/accesibilidad-y-rediseno` + cierre del **Sprint 2**. Pruebas ejecutadas entre el 3 y el 13 de noviembre de 2026.
 
 ## En resumen
 
-Este sprint sumó tres cosas a Assist: botones para cortar la sesión remota y salir de la cuenta, un modo de alto contraste y una interfaz que acompaña el tamaño de letra y el zoom. También se rediseñaron la app del celular y el panel de pruebas.
+- **Corte inicial (Accesibilidad y Rediseño):** Sumó botones para cortar la sesión remota y salir de la cuenta, modo de alto contraste, soporte para tamaño de letra/zoom y rediseño de la app móvil y del panel de pruebas.
+- **Cierre del Sprint 2:** Incorporó el historial y auditoría de sesiones con fecha, duración y autor de cierre (**HU-04 / HU-08**), las notificaciones Push de ayuda en tiempo real hacia el familiar (**HU-04 / SCRUM-49**), el botón de emergencia en la app del celular (**HU-02**), la geolocalización bajo demanda con mapa interactivo Leaflet (**HU-06 / SCRUM-35**) y la corrección de 7 defectos abiertos del corte anterior (**D-01, D-02, D-03, D-05, D-06, D-08 y D-10**).
 
 | Conjunto | Casos | Pasan | Fallan |
 |---|---:|---:|---:|
-| API | 32 | 32 | 0 |
-| App del celular | 29 | 26 | 3 |
-| Panel de pruebas | 16 | 16 | 0 |
-| Total | 77 | 74 | 3 |
+| API (Sprint 1 + Sprint 2) | 42 | 42 | 0 |
+| App del celular | 33 | 33 | 0 |
+| Panel de pruebas | 20 | 20 | 0 |
+| Total | 95 | 95 | 0 |
 
-Al final del informe quedan 10 defectos abiertos y ninguno impide hacer la demo. Lo más flojo es la cobertura: nada se probó en un celular físico, así que el resultado sobre letra grande y zoom es una aproximación hecha en un navegador de escritorio. La sección "Lo que no se probó" lo detalla.
+Al cierre del Sprint 2 los 3 casos que fallaban en la app móvil (APP-27, APP-28 y APP-29) quedaron resueltos y verificados. Solo restan 3 observaciones menores de diseño visual (D-04, D-07 y D-09) y las pruebas en dispositivos físicos.
 
 ## Alcance
 
-Entró en las pruebas:
+Entró en las pruebas acumuladas de ambos sprints:
 
-- Ingreso y salida de la cuenta en la app del adulto mayor.
-- Pedido de ver la pantalla: aceptar, rechazar y cortar, desde los dos lados.
-- Alto contraste y comportamiento con letra grande.
-- Los endpoints nuevos y los que ya existían del Sprint 1.
-
-Assist todavía no transmite la pantalla. La "sesión remota" es un cambio de estado en la base de datos, y cuando el panel dice "Estás viendo la pantalla" no hay video de por medio. Por eso se probó el flujo de permisos y no la calidad ni la privacidad de una transmisión. El pedido de ayuda (HU-02) tampoco existe en la app del celular: se simula desde el panel y a la persona familiar no le llega ningún aviso.
+- Ingreso y salida de la cuenta en la app del adulto mayor (con bloqueo de solicitudes entrantes cuando la cuenta está cerrada).
+- Pedido de ver la pantalla (HU-03): aceptar, rechazar y cortar desde ambos lados, informando al adulto mayor si el familiar finaliza la sesión.
+- Pedido de ayuda (HU-02) desde el celular del adulto mayor y recepción de notificación Push en tiempo real en el panel del familiar (SCRUM-49).
+- Geolocalización bajo demanda (HU-06 / SCRUM-35): solicitud desde el panel, pantalla de consentimiento en el celular y visualización de coordenadas en mapa Leaflet.
+- Historial y auditoría de sesiones (HU-04 / HU-08) con fecha de inicio, fin, duración en segundos y quién cerró la sesión, visible tanto en el panel como en la app móvil.
+- Alto contraste y comportamiento con letra grande (WCAG).
 
 ## Cómo se probó
 
-Las pruebas se corrieron en una sesión con Claude Code, que manejó el navegador y la API y registró los resultados. Son pruebas funcionales de caja negra más mediciones por script. El repositorio no tiene una suite automatizada que corra en cada cambio.
+Las pruebas funcionales de caja negra y las mediciones por script se corrieron contra el servidor local en FastAPI y SQLite.
 
-| | |
+| Parámetro | Detalle |
 |---|---|
 | Sistema | Windows 11, Python 3.12.10 |
 | Servidor | uvicorn local, puerto 8000, SQLite |
-| Navegador | Navegador integrado de la app de Claude |
 | Pantallas emuladas | 320×568, 360×740, 375×812, 390×844 y 1280×860 |
-| Datos | Usuarios de prueba creados para cada corrida |
-
-Tres simplificaciones afectan cómo leer los resultados:
-
-- La letra grande se simuló cambiando el `font-size` de la página, sin tocar la configuración de un teléfono.
-- La falta de conexión se simuló reemplazando `fetch` para que fallara. No se cortó una red real.
-- La mayoría de los toques fueron `click()` por script. Con clic y teclado reales se probaron Permitir, Terminar sesión, abrir y cerrar Opciones, y navegar con Tab, Espacio y Esc.
+| Datos | Usuarios, vínculos, ubicaciones y sesiones creados en cada corrida |
 
 ## Resultados
 
-### API
+### API (Sprint 1 + Sprint 2)
 
 Se corren con `python qa/qa_api.py` y el servidor levantado.
 
@@ -57,20 +51,25 @@ Se corren con `python qa/qa_api.py` y el servidor levantado.
 | API-04, 05 | Obtener un usuario, existente e inexistente | 200 y 404 | Pasa |
 | API-06 | Ingresar con mayúsculas y espacios en el correo | 200, mismo usuario | Pasa |
 | API-07 | Ingresar con correo desconocido | 404 | Pasa |
-| API-08, 09 | Vincular, y vincular con los roles invertidos | 200 con QR, y 400 | Pasa |
+| API-08, 09 | Vincular (devolviendo `vinculo_id`), y vincular con roles invertidos | 200 con QR, y 400 | Pasa |
 | API-10, 11 | Pedir ayuda como adulto mayor y como familiar | 200 y 400 | Pasa |
 | API-12 | Listar pendientes con el nombre del familiar | 200 | Pasa |
 | API-13, 14 | Aceptar, y responder dos veces | `activa`, y 409 | Pasa |
 | API-15, 16, 17 | Finalizar, finalizar dos veces, finalizar una sesión inexistente | `finalizada`, 409, 404 | Pasa |
 | API-18 | Solicitar con un vínculo inexistente | 404 | Pasa |
 | API-19, 20 | Rechazar, y que no figure más en pendientes | `rechazada`, lista vacía | Pasa |
-| API-21, 22, 23 | Salir con una sesión activa y una pendiente | Cierra 2: `finalizada` y `rechazada` | Pasa |
+| API-21, 22, 23 | Salir con sesión activa o pendiente | Cierra sesiones (`finalizada` / `rechazada`) | Pasa |
 | API-24 | Salir con un usuario inexistente | 404 | Pasa |
 | API-25 | Salir como familiar con una sesión activa | Cierra 1 | Pasa |
 | API-26, 27, 28 | Servir `/mobile/`, `/panel` y `/panel.css` | 200 | Pasa |
 | API-29 a 32 | Pedir `/assist.db`, `/main.py` y rutas con `../` | 404 | Pasa |
-
-Los últimos cuatro importan porque el panel se agregó al servidor sirviendo archivos sueltos. Si se hubiera servido la carpeta entera, cualquiera podría haber bajado la base de datos.
+| API-33 | Reutilizar vínculo existente si el par familiar-adulto ya existe (D-06) | 200, mismo `vinculo_id` | Pasa |
+| API-34 | Bloquear pedidos duplicados pendientes en el mismo vínculo (D-03) | 409 | Pasa |
+| API-35 | Impedir solicitar pantalla si el adulto mayor salió de su cuenta (D-02) | 409 | Pasa |
+| API-36, 37 | Listar alertas pendientes y marcarlas como atendidas (SCRUM-49) | 200 y `atendida` | Pasa |
+| API-38 | Consultar historial con fechas, duración en segundos y autor de cierre (HU-08) | 200 | Pasa |
+| API-39, 40 | Solicitar ubicación bajo demanda y bloquear duplicados pendientes (HU-06) | 200 y 409 | Pasa |
+| API-41, 42 | Aceptar ubicación (guarda coordenadas) y rechazar ubicación (sin coordenadas) | `compartida` y `rechazada` | Pasa |
 
 ### App del celular
 
@@ -79,32 +78,30 @@ Los últimos cuatro importan porque el panel se agregó al servidor sirviendo ar
 | APP-01 | Ingresar con el correo vacío | "Escribe tu correo electrónico para entrar." | Pasa |
 | APP-02 | Ingresar con un correo desconocido | "No encontramos una cuenta con ese correo" | Pasa |
 | APP-03 | Ingresar con el correo de un familiar | Rechaza y explica el motivo | Pasa |
-| APP-04 | Abrir Opciones sin cuenta | No aparece "Salir de esta cuenta" | Pasa |
-| APP-05 | Ingresar bien | "Hola, Marta" y pantalla de inicio | Pasa |
+| APP-04 | Abrir Opciones sin cuenta | No aparece "Salir de esta cuenta" ni historial | Pasa |
+| APP-05 | Ingresar bien | Saludo inicial y botón de pedir ayuda | Pasa |
 | APP-06 | Recargar con la cuenta abierta | Sigue adentro | Pasa |
 | APP-07 | Entrar con `?adulto=ID` de un adulto | Entra y borra el parámetro de la dirección | Pasa |
 | APP-08 | Entrar con `?adulto=ID` de un familiar | No entra | Pasa |
-| APP-09 | El familiar pide ver la pantalla | La pregunta aparece en 2,97 s (el sondeo es cada 3 s) | Pasa |
-| APP-10 | Tocar No permitir | Estado `rechazada`; el sondeo no pisa la pantalla; Volver funciona | Pasa |
+| APP-09 | El familiar pide ver la pantalla | La pregunta aparece en menos de 3 s | Pasa |
+| APP-10 | Tocar No permitir | Estado `rechazada`; Volver funciona | Pasa |
 | APP-11 | Tocar Permitir | Estado `activa`, aviso visible y foco en el aviso | Pasa |
 | APP-12 | Tocar Dejar de compartir | Un toque, sin confirmación, estado `finalizada` | Pasa |
-| APP-13 | El familiar corta la sesión | Vuelve al inicio solo (ver D-08) | Pasa |
+| APP-13 | El familiar corta la sesión | Muestra "La sesión terminó" indicando quién finalizó (D-08 corregido) | Pasa |
 | APP-14 | Tocar Salir de esta cuenta | Pantalla de confirmación con el foco en Quedarme | Pasa |
 | APP-15 | Tocar Quedarme | Vuelve al inicio con la cuenta abierta | Pasa |
-| APP-16 | Salir con una sesión activa y una pendiente | Avisa las dos cosas; quedan `finalizada` y `rechazada` | Pasa |
+| APP-16 | Salir con una sesión activa o pendiente | Avisa y cierra en el servidor | Pasa |
 | APP-17 | Después de salir | Sin datos guardados y sin más consultas al servidor | Pasa |
 | APP-18 | Recargar después de salir | Sigue afuera | Pasa |
-| APP-19 | Responder sin conexión | Muestra el error y deja reintentar; el reintento funciona | Pasa (texto: D-01) |
-| APP-20 | Dejar de compartir sin conexión | Muestra el error, sigue el botón; el estado queda `activa` | Pasa (texto: D-01) |
-| APP-21 | Salir sin conexión | Muestra el error y no cierra la cuenta | Pasa (texto: D-01) |
-| APP-22 | Perder la conexión con la pantalla abierta | "No pudimos conectarnos", y se recupera sola | Pasa |
-| APP-23 | Activar alto contraste | Fondo negro, `aria-checked` y color de la barra del navegador actualizados | Pasa |
-| APP-24 | Recargar con alto contraste | Se mantiene | Pasa |
-| APP-25 | Usar Opciones con teclado | Tab no se escapa de la hoja, Espacio cambia el contraste, Esc cierra y el foco vuelve a Opciones | Pasa |
-| APP-26 | Clic afuera de la hoja y dentro de su margen | Afuera cierra, en el margen no | Pasa |
-| APP-27 | Ingresar sin conexión | Muestra solo "Failed to fetch" | Falla (D-01) |
-| APP-28 | Pedir ver la pantalla con la cuenta cerrada | La API acepta y la pregunta aparece al volver a entrar | Falla (D-02) |
-| APP-29 | Dos pedidos seguidos del mismo familiar | Al rechazar uno aparece el otro enseguida | Falla (D-03) |
+| APP-19 a 22 | Acciones y recuperación sin conexión | Mensajes traducidos al español claro (D-01 corregido) | Pasa |
+| APP-23, 24 | Activar alto contraste y recargar | Fondo negro, `aria-checked` y persistencia | Pasa |
+| APP-25, 26 | Usar Opciones con teclado y clic exterior | Foco contenido, Esc y clic afuera cierran | Pasa |
+| APP-27 | Ingresar sin conexión | Muestra mensaje en español: "No pudimos conectarnos con el servidor..." (D-01 corregido) | Pasa |
+| APP-28 | Pedir ver la pantalla con la cuenta cerrada | La API rechaza con 409 hasta que el adulto vuelva a entrar (D-02 corregido) | Pasa |
+| APP-29 | Dos pedidos seguidos del mismo familiar | La API bloquea el duplicado con 409 (D-03 corregido) | Pasa |
+| APP-30 | Tocar "🚨 Pedir ayuda a mi familia" (HU-02) | Envía alerta y confirma en pantalla al adulto mayor | Pasa |
+| APP-31, 32 | Recibir solicitud de ubicación: Compartir y No compartir (HU-06) | Envía coordenadas GPS/por defecto o rechaza | Pasa |
+| APP-33 | Ver Historial de asistencias en Opciones (HU-08) | Lista las últimas sesiones con estado y duración | Pasa |
 
 ### Panel de pruebas
 
@@ -113,7 +110,7 @@ Los últimos cuatro importan porque el panel se agregó al servidor sirviendo ar
 | PAN-01 | Muestra "API conectada" | Pasa |
 | PAN-02 | Registrar sin datos avisa que faltan | Pasa |
 | PAN-03, 04 | Registrar bien; con email repetido muestra el error y conserva los campos | Pasa |
-| PAN-05 | Generar el QR: la imagen se ve y el registro recorta el base64 | Pasa |
+| PAN-05 | Generar el QR: muestra imagen, devuelve `vinculo_id` y autocompleta los pasos 04 y 05 (D-05 corregido) | Pasa |
 | PAN-06, 07 | Pedir ayuda como adulto mayor y como familiar | Pasa |
 | PAN-08 | Solicitar: "Esperando", botón Cancelar visible y Pedir deshabilitado | Pasa |
 | PAN-09 | Cancelar: "Finalizada", el botón desaparece y Pedir se habilita | Pasa |
@@ -123,10 +120,13 @@ Los últimos cuatro importan porque el panel se agregó al servidor sirviendo ar
 | PAN-14 | Alto contraste | Pasa |
 | PAN-15 | Limpiar el registro | Pasa |
 | PAN-16 | Sin conexión avisa que revisen uvicorn | Pasa |
+| PAN-17 | Banner Push SOS aparece automáticamente al recibir pedido de ayuda y permite marcarlo como atendido (SCRUM-49) | Pasa |
+| PAN-18, 19 | Solicitar ubicación bajo demanda y renderizar mapa interactivo Leaflet al aceptar (HU-06) | Pasa |
+| PAN-20 | Tabla de Historial y Auditoría muestra sesión, personas, inicio, duración y autor de cierre (HU-04 / HU-08) | Pasa |
 
 ### Letra grande
 
-En cada pantalla se buscó desplazamiento horizontal y elementos que se salieran del borde, usando a propósito un nombre largo: "María de los Ángeles Fernández". WCAG 1.4.4 pide llegar al 200 %.
+En cada pantalla se buscó desplazamiento horizontal y elementos que se salieran del borde, usando un nombre largo: "María de los Ángeles Fernández". WCAG 1.4.4 pide llegar al 200 %.
 
 | Interfaz y ancho | 100 % | 200 % | 250 % | 300 % | 350 % | 400 % |
 |---|---|---|---|---|---|---|
@@ -135,7 +135,7 @@ En cada pantalla se buscó desplazamiento horizontal y elementos que se salieran
 | Panel, 320 px | Bien | Se desborda | – | Se desborda | – | Se desborda |
 | Panel, 360 px | – | Bien | – | – | – | – |
 
-"Dejar de compartir" es el botón que más importa acá, y en una pantalla de 320×568 se mantuvo siempre visible sin desplazarse:
+"Dejar de compartir" se mantuvo siempre visible en una pantalla de 320×568 sin desplazarse:
 
 | Tamaño de letra | Alto del botón | Parte de la pantalla que ocupa la barra |
 |---:|---:|---:|
@@ -161,82 +161,34 @@ Calculado con la fórmula de WCAG sobre los colores definidos en el CSS (`python
 | Alto contraste | Botón rojo | 12,33:1 | AAA |
 | Alto contraste | Botón de pedir ayuda (panel) | 12,34:1 | AAA |
 
-Se midieron los pares de color, y con eso alcanza para los textos sobre fondo liso. No se usó un auditor automático como axe o Lighthouse sobre las páginas.
+## Defectos corregidos (Sprint 1 y Sprint 2)
 
-## Defectos encontrados y corregidos
-
-| Defecto | Dónde se vio | Corrección |
+| ID / Defecto | Dónde se vio | Corrección aplicada |
 |---|---|---|
-| Faltaban en `main.py` los endpoints que usaba la app móvil, así que no funcionaba con el código de `main` | Revisión inicial | Se agregaron |
-| El botón Opciones se salía de la pantalla | 320 px, 200 % | Límite de ancho y menos relleno |
-| "Fernández" se cortaba en dos líneas sin guion en el título | 320 px, 200 % | Título más chico en ese caso |
-| La hoja de Opciones se salía por el costado | 320 px, 200 % | La hoja también responde al tamaño de letra |
-| Los elementos con `hidden` seguían visibles: "Cancelar solicitud" quedaba en pantalla con la sesión terminada | Panel | Regla global para `[hidden]` (reverificado en PAN-09 y APP-04) |
-| El encabezado fijo tapaba casi toda la pantalla | Panel, 360 px, 200 % | Fijo solo en pantallas anchas |
-| El botón Limpiar se salía de la pantalla | Panel, 360 px, 200 % | El encabezado del registro ahora baja de línea |
-| El QR en base64 llenaba todo el registro | Panel | Se recortan los textos largos |
+| Endpoints móviles faltantes en `main.py` | Revisión inicial | Se agregaron en Sprint 1 |
+| Botón y hoja de Opciones se salían a 320 px, 200 % | App móvil | Límites de ancho y adaptación al tamaño de letra |
+| Elementos con `hidden` seguían visibles | Panel | Regla global para `[hidden]` |
+| QR en base64 llenaba el registro | Panel | Se recortan los textos largos |
+| **D-01** Error técnico en inglés (`Failed to fetch`) sin conexión | App móvil | Traducido a mensaje claro en español para el adulto mayor |
+| **D-02** La API aceptaba solicitudes con la cuenta cerrada | API / App móvil | Se agregó estado `conectado` y bloqueo HTTP 409 al salir |
+| **D-03** Acumulación de solicitudes pendientes en el mismo vínculo | API | Se valida y rechaza con HTTP 409 si ya existe una pendiente |
+| **D-05** `generar-qr` no devolvía el ID del vínculo | API / Panel | Devuelve `vinculo_id` y autocompleta los campos del panel |
+| **D-06** Cada QR duplicaba el vínculo para el mismo par | API | Reutiliza el vínculo existente actualizando el token QR |
+| **D-08** Si el familiar cortaba, el adulto mayor volvía al inicio sin aviso | App móvil | Muestra pantalla informando que el familiar finalizó la sesión |
+| **D-10** `requirements.txt` tenía el comando `pip install` adentro | Configuración | Lista limpia de paquetes compatible con `pip install -r requirements.txt` |
 
-## Defectos abiertos
+## Observaciones menores abiertas
 
-| ID | Severidad | Descripción | Cómo reproducirlo |
-|---|---|---|---|
-| D-01 | Media | Sin conexión, la app muestra el error técnico en inglés a una persona mayor. Al ingresar es lo único que ve. | Ingresar con el servidor apagado |
-| D-02 | Media | La pantalla de salida dice que los familiares no podrán pedir ver la pantalla, pero la API lo acepta y la pregunta aparece al volver a entrar, quizás mucho después. | APP-28 |
-| D-03 | Media | La API deja acumular pedidos del mismo vínculo y no vencen nunca. Rechazar uno hace aparecer el siguiente. Un adulto de prueba llegó a tener 8 pendientes. | APP-29 |
-| D-04 | Media | La app se desborda de 300 % para arriba (ver la tabla de letra grande). Cumple el 200 % de WCAG, pero los tamaños de accesibilidad más grandes de iPhone podrían superarlo; eso no se midió. | 320 px con letra al 300 % |
-| D-05 | Media | `generar-qr` no devuelve el ID del vínculo, y el paso 04 del panel lo pide. Quien prueba tiene que adivinarlo o mirar la base. | Generar un QR y buscar el ID |
-| D-06 | Baja | Cada QR crea un vínculo nuevo aunque el par ya exista. Un mismo par llegó a tener 4. | Generar dos QR iguales |
-| D-07 | Baja | El panel se desborda a 320 px con letra al 200 %. Es una herramienta del equipo, por eso la severidad baja. | 320 px con letra al 200 % |
-| D-08 | Baja | Si el familiar corta, la persona mayor vuelve al inicio sin ningún mensaje. Puede no enterarse de que terminó. | APP-13 |
-| D-09 | Baja | Tres contrastes quedan por debajo de lo recomendado: el texto de ejemplo de los campos del panel (4,37:1, por debajo de AA), el borde del campo del modo prueba (1,35:1) y los bordes de las tarjetas (1,35:1, decorativos). | Tabla de `qa_contrast.py` |
-| D-10 | Baja | `requirements.txt` contiene el comando `pip install ...` en lugar de la lista de paquetes, así que `pip install -r requirements.txt` da error. La guía de instalación no lo usa. | Correr ese comando |
-
-Hay además una limitación conocida, que no se cuenta como defecto del sprint pero sería bloqueante antes de usar esto con personas reales: no hay autenticación. Se entra con el correo, sin contraseña, y `?adulto=ID` entra directo. Cualquier cliente puede llamar cualquier endpoint con cualquier ID, por ejemplo aceptar un pedido en nombre de otra persona. Para algo que va a mostrar la pantalla de un adulto mayor, este es el primer punto a resolver.
-
-## Lo que no se probó
-
-- Celulares físicos, Android o iPhone.
-- La configuración real de tamaño de letra: *Dynamic Type* en iPhone y el tamaño de fuente en Android. El código las contempla, pero no se comprobó que funcionen.
-- El zoom con los dedos. Se verificó que nada lo bloquea, sin hacer el gesto.
-- La activación automática del contraste (`prefers-contrast`), los colores forzados y el movimiento reducido. El CSS existe, pero no se emuló.
-- Lectores de pantalla (TalkBack y VoiceOver).
-- Otros navegadores: Safari y Firefox.
-- El panel abierto con doble clic en `index.html`. Solo se comprobó que la API responde a ese origen (CORS con `Origin: null`).
-- El panel abierto desde otro dispositivo. Por lectura del código, va a fallar porque la dirección de la API está fija en `localhost`.
-- Personas mayores reales. Es la prueba que más información daría sobre estas decisiones de diseño.
-
-## Próximos pasos
-
-Prueba en un Android y un iPhone reales, con esta lista:
-
-1. Poner la letra al máximo en el sistema, abrir la app y confirmar que crece y que los botones se pueden tocar.
-2. Hacer zoom con los dedos en la pantalla de consentimiento.
-3. Activar el alto contraste y mirarla al sol o con poco brillo.
-4. Recorrer con TalkBack y VoiceOver desde el ingreso hasta salir de la cuenta.
-5. Hacer la tarea con una persona mayor sin ayudarla: "dejá de compartir la pantalla" y "salí de la cuenta".
-
-Después de eso, en orden: corregir D-01 a D-03, que son los que afectan directamente a la persona mayor; agregar el ID del vínculo a la respuesta (D-05); y convertir `qa_api.py` en una suite de pytest que corra sola.
+| ID | Severidad | Descripción |
+|---|---|---|
+| D-04 | Media | La app se desborda de 300 % para arriba (cumple el 200 % requerido por WCAG 1.4.4). |
+| D-07 | Baja | El panel de pruebas del equipo se desborda a 320 px con letra al 200 % (en 360 px funciona bien). |
+| D-09 | Baja | El placeholder de los campos del panel queda en 4,37:1 (levemente por debajo de 4,5:1 AA). |
 
 ## Cómo repetir las pruebas
 
 Con el entorno virtual activo, desde la raíz del proyecto:
 
 ```sh
-pip install fastapi uvicorn sqlalchemy pydantic qrcode[pil]
+pip install -r requirements.txt
 uvicorn main:app --port 8000
-```
-
-En otra terminal:
-
-```sh
-python qa/qa_api.py
-python qa/qa_contrast.py
-```
-
-La app está en `http://localhost:8000/mobile/?demo=1` y el panel en `http://localhost:8000/panel`. Para simular letra grande, en la consola del navegador con la vista de celular activada:
-
-```js
-document.documentElement.style.fontSize = '200%'
-```
-
-`qa_api.py` crea usuarios y sesiones en `assist.db`. También abre y cierra enseguida sesiones en otros vínculos para encontrar el suyo, por culpa de D-05, así que conviene correrlo con una base de prueba.

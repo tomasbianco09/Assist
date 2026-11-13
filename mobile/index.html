@@ -2,15 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <!-- Nunca bloquear el zoom (nada de maximum-scale ni user-scalable=no):
-       muchas personas mayores agrandan la pantalla con los dedos. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <!-- Chrome para Android: respeta el tamaño de letra elegido en el sistema. -->
   <meta name="text-scale" content="scale">
   <meta name="theme-color" content="#F4EEE3">
   <title>Assist</title>
   <script>
-    // Aplica el contraste antes de dibujar para que no "parpadee" al abrir.
     (function () {
       var pref = null;
       try { pref = localStorage.getItem('assist_contraste'); } catch (e) {}
@@ -64,6 +60,13 @@
     </button>
 
     <p class="hint">¿Letra muy chica? Agrándala desde la configuración de tu celular, en <em>Pantalla → Tamaño de fuente</em>. Assist se acomoda solo.</p>
+
+    <section class="account" id="historySection" hidden aria-labelledby="historyTitle">
+      <h3 id="historyTitle">Historial de asistencias</h3>
+      <ul class="rules" id="mobileHistoryList">
+        <li><span>Todavía no hay sesiones registradas.</span></li>
+      </ul>
+    </section>
 
     <section class="account" id="account" hidden aria-labelledby="accountTitle">
       <h3 id="accountTitle">Tu cuenta</h3>
