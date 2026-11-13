@@ -32,6 +32,9 @@
                     <span class="track" aria-hidden="true"><span class="knob"></span></span>
                     Alto contraste
                 </button>
+                <button class="chip" id="toggleLogFloatBtn" type="button">
+                    📋 Ver registro técnico
+                </button>
                 <a class="chip primary-chip" href="http://localhost:8000/mobile/?demo=1" target="_blank" rel="noopener">
                     Abrir app del celular
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
@@ -75,7 +78,8 @@
             </div>
         </section>
 
-        <div class="layout">
+        <!-- Contenedor central a ancho completo -->
+        <div class="layout-full">
             <main class="steps">
 
                 <!-- ======================================================= -->
@@ -141,7 +145,7 @@
                     <figure class="qr" id="qrContainer" hidden>
                         <img id="qrImage" src="" alt="Código QR de vinculación">
                         <figcaption>
-                            <strong>¡Vínculo #<span id="qrVinculoId"></span> activo!</strong> Ya se copió automáticamente en los pasos 04 y 05.<br>
+                            <strong>¡Vínculo #<span id="qrVinculoId"></span> activo!</strong> Ya se copió automáticamente en los pasos 03 y 04.<br>
                             <span>Token QR: <code id="qrToken"></code></span>
                         </figcaption>
                     </figure>
@@ -157,7 +161,7 @@
 
                 <!-- Acciones rápidas de visualización y ubicación en 2 columnas -->
                 <div class="assist-grid">
-                    <!-- 04 · Ver pantalla -->
+                    <!-- 03 · Ver pantalla -->
                     <form class="card" id="formSesion" novalidate>
                         <header class="card-head">
                             <span class="num" aria-hidden="true">03</span>
@@ -184,7 +188,7 @@
                         </div>
                     </form>
 
-                    <!-- 05 · Geolocalización bajo Demanda -->
+                    <!-- 04 · Geolocalización bajo Demanda -->
                     <form class="card" id="formUbicacion" novalidate>
                         <header class="card-head">
                             <span class="num" aria-hidden="true">04</span>
@@ -216,7 +220,7 @@
                     </form>
                 </div>
 
-                <!-- 03 · Ayuda SOS -->
+                <!-- 05 · Ayuda SOS -->
                 <form class="card" id="formAyuda" novalidate>
                     <header class="card-head">
                         <span class="num" aria-hidden="true">05</span>
@@ -264,16 +268,22 @@
                     </div>
                 </section>
             </main>
+        </div>
+    </div>
 
-            <aside class="log" aria-labelledby="logTitle">
-                <div class="log-head">
-                    <h2 id="logTitle">Registro técnico (API)</h2>
+    <!-- Modal / Consola flotante para el Registro Técnico de la API (Oculto por defecto) -->
+    <div class="log-modal" id="logModal" hidden aria-labelledby="modalLogTitle">
+        <div class="log-modal-content">
+            <div class="log-head">
+                <h2 id="modalLogTitle">Registro técnico (API)</h2>
+                <div class="log-head-actions">
                     <button class="link-btn" type="button" id="limpiarLog">Limpiar</button>
+                    <button class="close-btn" type="button" id="closeLogModalBtn">Cerrar ✕</button>
                 </div>
-                <ol class="log-list" id="resultado" aria-live="polite">
-                    <li class="log-empty">Todavía no hay respuestas. Sigue los pasos de la izquierda.</li>
-                </ol>
-            </aside>
+            </div>
+            <ol class="log-list" id="resultado" aria-live="polite">
+                <li class="log-empty">Todavía no hay respuestas de la API.</li>
+            </ol>
         </div>
     </div>
 
@@ -300,6 +310,12 @@
             $log.innerHTML = '<li class="log-empty">Registro vacío.</li>';
         };
 
+        // --- Modal del Registro Técnico ---
+        const $logModal = document.getElementById('logModal');
+        $('toggleLogFloatBtn').onclick = () => { $logModal.hidden = false; };
+        $('closeLogModalBtn').onclick = () => { $logModal.hidden = true; };
+        $logModal.onclick = e => { if (e.target === $logModal) $logModal.hidden = true; };
+
         async function llamar(titulo, path, options, boton) {
             if (boton) boton.disabled = true;
             try {
@@ -317,7 +333,6 @@
         const post = body => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const submitBtn = form => form.querySelector('button[type="submit"]');
 
-        // --- Actualizar etiquetas de ayuda con los nombres de los IDs ---------
         async function actualizarNombresIds() {
             const fId = parseInt($('famId').value, 10);
             const aId = parseInt($('adId').value, 10);
@@ -343,7 +358,6 @@
         $('famId').onchange = actualizarNombresIds;
         $('adId').onchange = actualizarNombresIds;
 
-        // --- 01 · Registrar (Autocompleta el ID según el rol) -----------------
         $('formUsuario').onsubmit = async ev => {
             ev.preventDefault();
             const nombre = $('nuevoNombre').value.trim();
@@ -351,7 +365,7 @@
             const rol = document.querySelector('input[name="nuevoRol"]:checked').value;
             if (!nombre || !email) {
                 registrar('Registrar', 'Completa el nombre y el correo.', 'warn');
-                (nombre ? $('nuevoEmail') : $('nuevoNombre')).focus();
+                (nombre ? $('nuevoEmail' ) : $('nuevoNombre')).focus();
                 return;
             }
             const data = await llamar('Registrar', '/usuarios/', post({ nombre, email, rol }), submitBtn(ev.target));
@@ -371,7 +385,6 @@
             }
         };
 
-        // --- 02 · Vincular (D-05: rellena el vinculo_id automáticamente) ------
         $('formVinculo').onsubmit = async ev => {
             ev.preventDefault();
             const body = { familiar_id: parseInt($('famId').value, 10), adulto_id: parseInt($('adId').value, 10) };
@@ -388,7 +401,6 @@
             }
         };
 
-        // --- 05 · Pedir ayuda y Notificaciones Push (SCRUM-49) ----------------
         let alertaActualId = null;
         let ultimaAlertaNotificada = null;
 
@@ -431,7 +443,6 @@
         setInterval(verificarAlertasPush, 3000);
         verificarAlertasPush();
 
-        // --- 03 · Sesión remota -----------------------------------------------
         const ESTADOS = {
             pendiente_consentimiento: ['Esperando', 'Ve a la app del celular y toca “Permitir”…', 'wait'],
             activa: ['Activa', 'Estás viendo la pantalla. Solo puedes mirar.', 'live'],
@@ -490,7 +501,6 @@
             }
         };
 
-        // --- 04 · Geolocalización bajo Demanda (HU-06 / SCRUM-35) -------------
         let geoId = null, geoTimer = null, ultimoGeoEstado = null;
         let leafletMap = null, leafletMarker = null;
 
@@ -581,7 +591,6 @@
             }
         };
 
-        // --- 06 · Historial y Auditoría (HU-04 / HU-08) -----------------------
         function formatearDuracion(seg) {
             if (seg === null || seg === undefined) return 'En curso';
             if (seg < 60) return `${seg} s`;
@@ -624,7 +633,6 @@
         actualizarNombresIds();
         setInterval(cargarHistorial, 5000);
 
-        // --- Estado de la API y alto contraste ---------------------------------
         fetch(API_URL + '/').then(r => {
             $('apiState').className = 'api-state ' + (r.ok ? 'on' : 'off');
             $('apiText').textContent = r.ok ? 'API conectada' : 'API con errores';

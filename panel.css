@@ -3,7 +3,7 @@
   --line:#D9CEBC; --line-strong:#1C2B2D;
   --primary:#245C43; --primary-hover:#1B4A35; --primary-ink:#FFFFFF;
   --stop:#A8321F; --stop-ink:#FFFFFF;
-  --alert:#B5470B; --alert-ink:#FFFFFF;
+  --alert:#D9381E; --alert-ink:#FFFFFF;
   --wait:#9A5B0B; --focus:#1D4ED8;
   --log-bg:#1C2B2D; --log-ink:#EDE6D8; --log-dim:#A9B4B0; --log-ok:#8FD3A9; --log-warn:#F2C46D; --log-err:#FF9F8F;
   --bw:2px; --radius:1rem;
@@ -16,7 +16,7 @@
 :root[data-contrast="high"]{
   --bg:#000; --surface:#000; --ink:#FFF; --ink-2:#FFF; --line:#FFF; --line-strong:#FFF;
   --primary:#FFE600; --primary-hover:#FFF27A; --primary-ink:#000;
-  --stop:#FFB4A6; --stop-ink:#000; --alert:#FFB870; --alert-ink:#000;
+  --stop:#FFB4A6; --stop-ink:#000; --alert:#FF4D30; --alert-ink:#000;
   --wait:#FFE600; --focus:#00E5FF;
   --log-bg:#000; --log-ink:#FFF; --log-dim:#FFF; --log-ok:#7CFFB2; --log-warn:#FFE600; --log-err:#FFB4A6;
   --bw:3px; --grain:none;
@@ -33,7 +33,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 
 .top{border-bottom:var(--bw) solid var(--line);background:var(--bg) var(--grain)}
 @media (min-width:64rem){.top{position:sticky;top:0;z-index:20}}
-.top-in{max-width:78rem;margin:0 auto;padding:calc(.8rem + env(safe-area-inset-top)) 1.25rem .8rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1.25rem}
+.top-in{max-width:68rem;margin:0 auto;padding:calc(.8rem + env(safe-area-inset-top)) 1.25rem .8rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1.25rem}
 .brand{display:inline-flex;align-items:center;gap:.45em;font-family:var(--display);font-weight:600;font-size:1.5rem;letter-spacing:-.01em}
 .mark{width:1.3em;height:1.3em}
 .mark rect{fill:var(--primary);stroke:none}
@@ -58,7 +58,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 .api-state.off .dot{background:var(--stop)}
 .api-state.on,.api-state.off{color:var(--ink)}
 
-.page{max-width:78rem;margin:0 auto;padding:2rem 1.25rem calc(3rem + env(safe-area-inset-bottom))}
+.page{max-width:68rem;margin:0 auto;padding:2rem 1.25rem calc(3rem + env(safe-area-inset-bottom))}
 
 /* Banner Push SOS (SCRUM-49) */
 .push-banner{
@@ -76,9 +76,9 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 .kicker{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;color:var(--primary)}
 :root[data-contrast="high"] .kicker{color:var(--ink)}
 h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,1.4rem + 2.2vw,3.1rem);line-height:1.08;letter-spacing:-.02em;margin:.4rem 0 .7rem}
-.lead{color:var(--ink-2);font-size:1.125rem;max-width:48rem;margin-bottom:1.4rem}
+.lead{color:var(--ink-2);font-size:1.125rem;max-width:50rem;margin-bottom:1.4rem}
 
-/* Guía rápida de 3 pasos en la parte superior */
+/* Guía rápida de 3 pasos */
 .QuickGuide{
   display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));
   background:var(--surface);border:var(--bw) solid var(--line-strong);border-radius:var(--radius);
@@ -93,11 +93,8 @@ h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,1.4rem + 2.2v
 .guide-step strong{font-size:1.05rem;margin-top:.15rem}
 .guide-step p{font-size:.94rem;color:var(--ink-2);line-height:1.45}
 
-.layout{display:grid;gap:1.5rem;grid-template-columns:minmax(0,1fr)}
-@media (min-width:64rem){
-  .layout{grid-template-columns:minmax(0,1.55fr) minmax(0,.95fr);align-items:start}
-  .log{position:sticky;top:5.5rem;max-height:calc(100dvh - 7rem)}
-}
+/* Layout a ancho completo para centrar las cajas */
+.layout-full{display:flex;flex-direction:column;gap:1.5rem;max-width:54rem;margin:0 auto}
 .steps{display:flex;flex-direction:column;gap:1.15rem}
 
 /* Separadores de Fase */
@@ -110,8 +107,8 @@ h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,1.4rem + 2.2v
 :root[data-contrast="high"] .phase-tag{color:var(--ink)}
 .phase-header p{font-size:.95rem;color:var(--ink-2)}
 
-/* Grilla de 2 columnas para los pasos 03 (Pantalla) y 04 (Ubicación) */
-.assist-grid{display:grid;gap:1.15rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr))}
+.assist-grid{display:grid;gap:1.15rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));align-items:stretch}
+.assist-grid .card{display:flex;flex-direction:column;justify-content:space-between}
 
 .card{
   background:var(--surface);border:var(--bw) solid var(--line);border-radius:var(--radius);
@@ -128,7 +125,6 @@ h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,1.4rem + 2.2v
 .card h2 small{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.04em;vertical-align:.25em;margin-left:.3em;padding:.15em .45em;border:1.5px solid var(--line-strong);border-radius:.35em;white-space:nowrap}
 .card-head p{color:var(--ink-2);margin-top:.2rem;font-size:.98rem}
 
-/* Pista visual de flujo dentro de las tarjetas de asistencia */
 .step-flow-hint{
   display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem;
   font-size:.88rem;color:var(--ink-2);background:var(--bg);
@@ -147,7 +143,7 @@ legend{padding:0;margin-bottom:.35rem}
   border-radius:.7rem;background:var(--bg);
 }
 
-.card-actions-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.8rem 1rem}
+.card-actions-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.8rem 1rem}
 .helper-pill{
   font-size:.9rem;font-weight:700;color:var(--primary);background:var(--bg);
   padding:.45em .85em;border-radius:999px;border:var(--bw) solid var(--primary);
@@ -169,7 +165,7 @@ legend{padding:0;margin-bottom:.35rem}
 .btn:active{transform:scale(.985)}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
-.btn.primary:hover:not([disabled]){background:var(--primary-hover)}
+.btn.primary:hover:not([disabled])[disabled]{background:var(--primary-hover)}
 .btn.alert{background:var(--alert);border-color:var(--alert);color:var(--alert-ink)}
 .btn.stop{background:var(--stop);border-color:var(--stop);color:var(--stop-ink)}
 
@@ -198,15 +194,22 @@ legend{padding:0;margin-bottom:.35rem}
 .hist-table th{background:var(--bg);font-weight:700}
 .hist-status{font-family:var(--mono);font-size:.82rem}
 
-.log{
-  background:var(--log-bg);color:var(--log-ink);border-radius:var(--radius);
-  display:flex;flex-direction:column;min-height:16rem;overflow:hidden;
-  border:var(--bw) solid var(--log-bg);
+/* Modal flotante para el Registro Técnico */
+.log-modal{
+  position:fixed;inset:0;z-index:100;background:rgb(0 0 0 / .6);
+  display:grid;place-items:center;padding:1.5rem;animation:fade-in .2s ease-out;
 }
-:root[data-contrast="high"] .log{border-color:#FFF}
+.log-modal-content{
+  width:100%;max-width:48rem;max-height:85vh;background:var(--log-bg);color:var(--log-ink);
+  border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;
+  border:var(--bw) solid var(--line-strong);box-shadow:0 12px 35px rgb(0 0 0 / .3);
+}
+@keyframes fade-in{from{opacity:0}}
 .log-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.2rem;border-bottom:1px solid rgb(255 255 255 / .14)}
 .log-head h2{font-family:var(--display);font-weight:600;font-size:1.2rem}
+.log-head-actions{display:flex;align-items:center;gap:1rem}
 .link-btn{background:none;border:0;color:var(--log-dim);text-decoration:underline;text-underline-offset:.2em;cursor:pointer;font-weight:600;min-height:2.4em;padding:0 .2em}
+.close-btn{background:none;border:0;color:var(--log-ink);font-weight:700;cursor:pointer;font-size:1rem;padding:.2em .5em}
 .log-list{list-style:none;padding:.4rem 0;margin:0;overflow:auto;flex:1}
 .log-empty{padding:1rem 1.2rem;color:var(--log-dim)}
 .log-item{padding:.8rem 1.2rem;border-left:.3rem solid var(--log-ok)}
@@ -216,3 +219,38 @@ legend{padding:0;margin-bottom:.35rem}
 .log-meta{display:flex;justify-content:space-between;gap:1rem;font-size:.85rem;color:var(--log-dim);margin-bottom:.3rem}
 .log-tag{font-weight:700;color:var(--log-ink)}
 .log-item pre{font-family:var(--mono);font-size:.85rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* --- Paso 05 (SOS): campo + botón alineados en una sola fila --- */
+#formAyuda .card-actions-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;            /* el botón se apoya en la base del input, no en el centro de label+input */
+  justify-content:space-between;
+  gap:1rem 1.25rem;
+}
+#formAyuda .card-actions-row .field-wrap.narrow{
+  flex:1 1 15rem;
+  max-width:none;
+}
+/* Input y botón con exactamente la misma altura y el mismo radio */
+#formAyuda .field,
+#formAyuda .btn.alert{
+  height:3rem;
+  min-height:3rem;
+  border-radius:.7rem;
+}
+#formAyuda .btn.alert{
+  align-self:flex-end;
+  flex:0 0 auto;
+  padding:0 1.6rem;
+  white-space:nowrap;
+  box-shadow:0 4px 14px rgb(217 56 30 / .28);
+}
+#formAyuda .btn.alert:hover{filter:brightness(.9)}
+:root[data-contrast="high"] #formAyuda .btn.alert{box-shadow:none}
+:root[data-contrast="high"] #formAyuda .btn.alert:hover{filter:brightness(1.15)}
+
+/* En pantallas angostas el botón pasa abajo y ocupa todo el ancho */
+@media (max-width:34rem){
+  #formAyuda .btn.alert{width:100%}
+}

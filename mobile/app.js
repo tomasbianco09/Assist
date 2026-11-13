@@ -178,6 +178,21 @@ function viewLogin(aviso) {
   if (form) form.onsubmit = ingresar;
 }
 
+function guideHtml() {
+  const pasos = [
+    ['Tu familiar te pide ayuda', 'Puede pedirte ver tu pantalla o saber dónde estás. Tú también puedes avisarle con el botón “Pedir ayuda a mi familia”.'],
+    ['Tú decides', 'Te preguntamos antes. Toca Permitir o No permitir. Si no aceptas, no se comparte nada.'],
+    ['Paras cuando quieras', 'Mientras compartes, el botón rojo “Dejar de compartir” siempre está a la vista.']
+  ];
+  return `
+    <section class="guide" aria-labelledby="guideTitle">
+      <h2 id="guideTitle">Así funciona</h2>
+      <ol class="rules guide-steps" role="list">
+        ${pasos.map((p, i) => `<li><span class="ic yes" aria-hidden="true">${i + 1}</span><span class="guide-text"><strong>${p[0]}</strong><span>${p[1]}</span></span></li>`).join('')}
+      </ol>
+    </section>`;
+}
+
 function viewIdle(avisoAyuda) {
   show('idle' + (avisoAyuda ? '-ayuda' : ''), `
     <div class="stack center">
@@ -191,7 +206,8 @@ function viewIdle(avisoAyuda) {
       <div class="actions" style="width:100%">
         <button class="btn primary" id="helpBtn" type="button">🚨 Pedir ayuda a mi familia</button>
       </div>
-    </div>`);
+    </div>
+    ${guideHtml()}`);
   const helpBtn = document.getElementById('helpBtn');
   if (helpBtn) helpBtn.onclick = pedirAyudaMovil;
 }
