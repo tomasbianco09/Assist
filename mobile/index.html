@@ -2,21 +2,41 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <!-- Nunca bloquear el zoom (nada de maximum-scale ni user-scalable=no):
+       muchas personas mayores agrandan la pantalla con los dedos. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#12303B">
+  <!-- Chrome para Android: respeta el tamaño de letra elegido en el sistema. -->
+  <meta name="text-scale" content="scale">
+  <meta name="theme-color" content="#F4EEE3">
   <title>Assist</title>
+  <script>
+    // Aplica el contraste antes de dibujar para que no "parpadee" al abrir.
+    (function () {
+      var pref = null;
+      try { pref = localStorage.getItem('assist_contraste'); } catch (e) {}
+      var alto = pref ? pref === 'alto' : matchMedia('(prefers-contrast: more)').matches;
+      document.documentElement.dataset.contrast = alto ? 'high' : 'normal';
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app">
     <header class="top">
-      <span class="brand">Assist</span>
-      <span class="who" id="who"></span>
+      <span class="brand">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9"/><circle cx="12.5" cy="16" r="6"/><circle cx="19.5" cy="16" r="6"/></svg>
+        Assist
+      </span>
+      <button class="opts-btn" id="optsBtn" type="button" aria-haspopup="dialog" aria-controls="opts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+        <span>Opciones</span>
+      </button>
     </header>
 
-    <main id="screen" aria-live="polite"></main>
+    <main id="screen"></main>
 
     <details class="demo" id="demo" hidden>
       <summary>Modo prueba</summary>
@@ -25,9 +45,36 @@
         <input id="demoVinculo" type="number" min="1" value="1" aria-label="ID del vínculo">
         <button type="button" id="demoBtn">Simular solicitud</button>
       </div>
-      <p id="demoMsg" class="demo-msg"></p>
+      <p id="demoMsg" class="demo-msg" role="status"></p>
     </details>
   </div>
+
+  <dialog class="sheet" id="opts" aria-labelledby="optsTitle">
+    <div class="sheet-head">
+      <h2 id="optsTitle">Opciones</h2>
+      <button class="close-btn" type="button" id="optsClose">Cerrar</button>
+    </div>
+
+    <button class="toggle" id="hcSwitch" type="button" role="switch" aria-checked="false">
+      <span class="toggle-text">
+        <strong>Alto contraste</strong>
+        <small>Letras blancas sobre fondo negro, más fáciles de leer.</small>
+      </span>
+      <span class="track" aria-hidden="true"><span class="knob"></span></span>
+    </button>
+
+    <p class="hint">¿Letra muy chica? Agrándala desde la configuración de tu celular, en <em>Pantalla → Tamaño de fuente</em>. Assist se acomoda solo.</p>
+
+    <section class="account" id="account" hidden aria-labelledby="accountTitle">
+      <h3 id="accountTitle">Tu cuenta</h3>
+      <p class="account-who"><strong id="accName"></strong><br><span id="accEmail"></span></p>
+      <button class="btn quiet" type="button" id="logoutBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/></svg>
+        Salir de esta cuenta
+      </button>
+    </section>
+  </dialog>
+
   <script src="app.js"></script>
 </body>
 </html>
