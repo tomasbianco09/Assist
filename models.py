@@ -57,3 +57,23 @@ class UbicacionModel(Base):
     longitud = Column(Float, nullable=True)
     fecha_solicitud = Column(DateTime, default=datetime.datetime.utcnow)
     fecha_respuesta = Column(DateTime, nullable=True)
+
+class GrupoFamiliarModel(Base):
+    __tablename__ = "grupos_familiares"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, nullable=False)
+    adulto_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    codigo_token = Column(String(6), unique=True, index=True, nullable=False)
+    creado_por_familiar_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
+
+class MiembroGrupoModel(Base):
+    __tablename__ = "miembros_grupo"
+
+    id = Column(Integer, primary_key=True, index=True)
+    grupo_id = Column(Integer, ForeignKey("grupos_familiares.id"), nullable=False)
+    familiar_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    rol_grupo = Column(String, default="miembro")   # "admin" o "miembro"
+    estado = Column(String, default="pendiente")     # "pendiente", "aprobado", "rechazado"
+    fecha_union = Column(DateTime, default=datetime.datetime.utcnow)

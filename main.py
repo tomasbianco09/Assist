@@ -15,6 +15,8 @@ from database import engine, SessionLocal, Base
 import models
 import schemas
 
+import random
+
 # Crea las tablas automáticamente en SQLite al arrancar
 Base.metadata.create_all(bind=engine)
 
@@ -532,3 +534,13 @@ def panel_css():
     return FileResponse(BASE_DIR / "panel.css")
 
 app.mount("/mobile", StaticFiles(directory=BASE_DIR / "mobile", html=True), name="mobile")
+
+def generar_token_6_digitos(db: Session) -> str:
+    for _ in range(20):
+        token = f"{random.randint(0, 999999):06d}"
+        existe = db.query(models.GrupoFamiliarModel).filter(
+            models.GrupoFamiliarModel.codigo_token == token
+        ).first()
+        if not existe:
+            return token
+    raise HTTPException(status_code=500, detail="No se pudo generar un token único")

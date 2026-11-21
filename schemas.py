@@ -27,3 +27,16 @@ class UbicacionResponder(BaseModel):
     aceptar: bool
     latitud: Optional[float] = None
     longitud: Optional[float] = None
+
+class GrupoCrearRequest(BaseModel):
+    adulto_id: int
+    familiar_admin_id: Optional[int] = None
+    nombre: Optional[str] = None
+
+class UnirseGrupoRequest(BaseModel):
+    familiar_id: int
+    codigo_token: str
+
+class DecidirMiembroRequest(BaseModel):
+    admin_familiar_id: int
+    aprobar: bool
