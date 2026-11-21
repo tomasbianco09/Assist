@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="text-scale" content="scale">
-    <title>Assist · Iniciar sesión</title>
-    <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23245C43'/%3E%3Ccircle cx='12.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3Ccircle cx='19.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3C/svg%3E">
+    <title>Assist · Ingreso Familiar</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23245C43'/%3E%3Ccircle cx='12.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3Ccircle cx='19.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3C/svg%3E">
     <script>
         (function () {
             var pref = null;
@@ -15,12 +14,21 @@
             var alto = pref ? pref === 'alto' : matchMedia('(prefers-contrast: more)').matches;
             document.documentElement.dataset.contrast = alto ? 'high' : 'normal';
         })();
+        (function () {
+            try {
+                var raw = localStorage.getItem('assist_sesion_familiar');
+                var u = raw ? JSON.parse(raw) : null;
+                if (u && u.id && u.rol === 'familiar') {
+                    window.location.replace('/panel');
+                }
+            } catch (e) { }
+        })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
-    <link rel="stylesheet" href="panel.css">
+    <link rel="stylesheet" href="panel.css?v=3">
 </head>
 
 <body>
@@ -35,8 +43,6 @@
                 Assist
             </span>
             <div class="top-actions">
-                <span class="api-state" id="apiState"><span class="dot" aria-hidden="true"></span><span
-                        id="apiText">Buscando la API…</span></span>
                 <button class="chip" id="hcSwitch" type="button" role="switch" aria-checked="false">
                     <span class="track" aria-hidden="true"><span class="knob"></span></span>
                     Alto contraste
@@ -51,64 +57,56 @@
         </div>
     </header>
 
-    <div class="page" style="max-width:780px;">
+    <div class="page">
         <section class="intro">
-            <p class="kicker">Acceso al sistema · Assist</p>
-            <h1>Ingresá a tu cuenta familiar</h1>
-            <p class="lead">Iniciá sesión con tu correo para administrar el grupo familiar, vincular dispositivos y
-                gestionar asistencias.</p>
+            <p class="kicker">Acceso para familiares</p>
+            <h1>Ingresá al panel de asistencia</h1>
+            <p class="lead">Desde este acceso se registran e ingresan únicamente los <strong>familiares</strong>. Una vez dentro del panel podrás dar de alta a los adultos mayores y gestionar el grupo familiar.</p>
         </section>
 
-        <!-- Iniciar sesión -->
-        <form class="card" id="formLogin" novalidate>
-            <header class="card-head">
-                <span class="num" aria-hidden="true">01</span>
-                <div>
-                    <h2>Iniciar sesión</h2>
-                    <p>Ingresá con el correo electrónico registrado de tu cuenta de <strong>familiar</strong>.</p>
-                </div>
-            </header>
-            <div class="field-wrap">
-                <label for="loginEmail">Correo electrónico</label>
-                <input class="field" type="email" id="loginEmail" placeholder="lucas@test.com" autocomplete="email"
-                    required>
-            </div>
-            <button class="btn primary" type="submit">Entrar al panel</button>
-            <p class="helper-pill" id="loginMsg" hidden style="margin-top:0.75rem;"></p>
-        </form>
+        <div class="layout-full">
+            <main class="steps">
+                <div class="assist-grid">
+                    <!-- Iniciar sesión como familiar -->
+                    <form class="card" id="formLoginFamiliar" novalidate>
+                        <header class="card-head">
+                            <span class="num" aria-hidden="true">01</span>
+                            <div>
+                                <h2>Ya tengo cuenta de familiar</h2>
+                                <p>Ingresá con el correo con el que te registraste.</p>
+                            </div>
+                        </header>
+                        <div class="field-wrap">
+                            <label for="loginEmail">Correo electrónico</label>
+                            <input class="field" type="email" id="loginEmail" placeholder="lucas@correo.com" required>
+                        </div>
+                        <button class="btn primary" type="submit">Entrar al panel</button>
+                        <p class="helper-pill" id="loginError" hidden style="margin-top:0.65rem;color:#b42318;"></p>
+                    </form>
 
-        <!-- Crear cuenta nueva -->
-        <form class="card" id="formRegistro" novalidate style="margin-top:1.25rem;">
-            <header class="card-head">
-                <span class="num" aria-hidden="true">02</span>
-                <div>
-                    <h2>Crear cuenta nueva</h2>
-                    <p>Si todavía no tenés cuenta, registrá un <strong>Familiar</strong> o un <strong>Adulto
-                            mayor</strong>.</p>
+                    <!-- Crear cuenta solo de familiar -->
+                    <form class="card" id="formRegistroFamiliar" novalidate>
+                        <header class="card-head">
+                            <span class="num" aria-hidden="true">02</span>
+                            <div>
+                                <h2>Crear cuenta de familiar</h2>
+                                <p>Registrate como familiar para crear un grupo o unirte con un token de 6 dígitos.</p>
+                            </div>
+                        </header>
+                        <div class="field-wrap">
+                            <label for="regNombre">Nombre completo</label>
+                            <input class="field" type="text" id="regNombre" placeholder="Lucas Bianco" required>
+                        </div>
+                        <div class="field-wrap">
+                            <label for="regEmail">Correo electrónico</label>
+                            <input class="field" type="email" id="regEmail" placeholder="lucas@correo.com" required>
+                        </div>
+                        <button class="btn primary" type="submit">Registrar familiar y entrar</button>
+                        <p class="helper-pill" id="regError" hidden style="margin-top:0.65rem;color:#b42318;"></p>
+                    </form>
                 </div>
-            </header>
-            <div class="grid-3">
-                <div class="field-wrap">
-                    <label for="regNombre">Nombre completo</label>
-                    <input class="field" type="text" id="regNombre" placeholder="Lucas Gómez" autocomplete="off">
-                </div>
-                <div class="field-wrap">
-                    <label for="regEmail">Correo electrónico</label>
-                    <input class="field" type="email" id="regEmail" placeholder="lucas@test.com" autocomplete="off">
-                </div>
-                <fieldset class="field-wrap">
-                    <legend>Rol</legend>
-                    <div class="seg">
-                        <label><input type="radio" name="regRol" value="familiar" checked><span>Familiar</span></label>
-                        <label><input type="radio" name="regRol" value="adulto_mayor"><span>Adulto mayor</span></label>
-                    </div>
-                </fieldset>
-            </div>
-            <div class="card-actions-row">
-                <button class="btn ghost" type="submit">Registrar persona</button>
-                <p class="helper-pill" id="regMsg" hidden></p>
-            </div>
-        </form>
+            </main>
+        </div>
     </div>
 
     <script>
@@ -118,31 +116,24 @@
         const CLAVE_SESION_FAM = 'assist_sesion_familiar';
         const $ = id => document.getElementById(id);
 
-        function mostrarMsg(el, texto, esError) {
-            if (!el) return;
-            el.hidden = false;
-            el.textContent = texto;
-            el.style.color = esError ? '#b42318' : 'inherit';
+        function guardarYEntrar(usuario) {
+            localStorage.setItem(CLAVE_SESION_FAM, JSON.stringify({
+                id: usuario.id,
+                nombre: usuario.nombre,
+                email: usuario.email,
+                rol: 'familiar'
+            }));
+            window.location.href = '/panel';
         }
 
-        // Si ya hay sesión válida de familiar, ir directo al panel
-        try {
-            const raw = localStorage.getItem(CLAVE_SESION_FAM);
-            if (raw) {
-                const u = JSON.parse(raw);
-                if (u && u.id && u.rol === 'familiar') {
-                    window.location.replace('/panel');
-                }
-            }
-        } catch (_) { }
-
-        $('formLogin').onsubmit = async (ev) => {
+        $('formLoginFamiliar').onsubmit = async ev => {
             ev.preventDefault();
-            const email = $('loginEmail').value.trim().toLowerCase();
-            const msgEl = $('loginMsg');
+            const errBox = $('loginError');
+            errBox.hidden = true;
+            const email = $('loginEmail').value.trim();
             if (!email) {
-                mostrarMsg(msgEl, 'Ingresá tu correo electrónico.', true);
-                $('loginEmail').focus();
+                errBox.textContent = 'Ingresá tu correo electrónico.';
+                errBox.hidden = false;
                 return;
             }
             const btn = ev.target.querySelector('button[type="submit"]');
@@ -155,31 +146,29 @@
                 });
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok) {
-                    mostrarMsg(msgEl, data.detail || 'No se pudo iniciar sesión.', true);
-                    return;
+                    throw new Error(data.detail || 'No pudimos iniciar sesión.');
                 }
                 if (data.rol !== 'familiar') {
-                    mostrarMsg(msgEl, `Esta cuenta es de rol "${data.rol}". Usá una cuenta de familiar para entrar al panel.`, true);
-                    return;
+                    throw new Error('Ese correo pertenece a un adulto mayor. Esta pantalla es exclusiva para familiares.');
                 }
-                localStorage.setItem(CLAVE_SESION_FAM, JSON.stringify(data));
-                window.location.href = '/panel';
-            } catch (_) {
-                mostrarMsg(msgEl, 'No hay conexión con el servidor.', true);
+                guardarYEntrar(data);
+            } catch (err) {
+                errBox.textContent = err.message;
+                errBox.hidden = false;
             } finally {
                 btn.disabled = false;
             }
         };
 
-        $('formRegistro').onsubmit = async (ev) => {
+        $('formRegistroFamiliar').onsubmit = async ev => {
             ev.preventDefault();
+            const errBox = $('regError');
+            errBox.hidden = true;
             const nombre = $('regNombre').value.trim();
-            const email = $('regEmail').value.trim().toLowerCase();
-            const rol = document.querySelector('input[name="regRol"]:checked').value;
-            const msgEl = $('regMsg');
-
+            const email = $('regEmail').value.trim();
             if (!nombre || !email) {
-                mostrarMsg(msgEl, 'Completá nombre y correo electrónico.', true);
+                errBox.textContent = 'Completá tu nombre y correo electrónico.';
+                errBox.hidden = false;
                 return;
             }
             const btn = ev.target.querySelector('button[type="submit"]');
@@ -188,37 +177,20 @@
                 const r = await fetch(`${API_URL}/usuarios/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, email, rol })
+                    body: JSON.stringify({ nombre, email, rol: 'familiar' })
                 });
                 const data = await r.json().catch(() => ({}));
                 if (!r.ok) {
-                    mostrarMsg(msgEl, data.detail || 'No se pudo registrar.', true);
-                    return;
+                    throw new Error(data.detail || 'No se pudo registrar el familiar.');
                 }
-                $('regNombre').value = '';
-                $('regEmail').value = '';
-                if (rol === 'familiar') {
-                    const sesion = { id: data.id, nombre: data.nombre, email, rol: data.rol };
-                    localStorage.setItem(CLAVE_SESION_FAM, JSON.stringify(sesion));
-                    mostrarMsg(msgEl, `✓ Cuenta creada (#${data.id}). Redirigiendo al panel…`, false);
-                    setTimeout(() => { window.location.href = '/panel'; }, 500);
-                } else {
-                    mostrarMsg(msgEl, `✓ Adulto mayor "${data.nombre}" registrado con ID #${data.id}. Ya podés iniciar sesión como familiar.`, false);
-                }
-            } catch (_) {
-                mostrarMsg(msgEl, 'No hay conexión con el servidor.', true);
+                guardarYEntrar({ id: data.id, nombre: data.nombre, email, rol: 'familiar' });
+            } catch (err) {
+                errBox.textContent = err.message;
+                errBox.hidden = false;
             } finally {
                 btn.disabled = false;
             }
         };
-
-        fetch(API_URL + '/').then(r => {
-            $('apiState').className = 'api-state ' + (r.ok ? 'on' : 'off');
-            $('apiText').textContent = r.ok ? 'API conectada' : 'API con errores';
-        }).catch(() => {
-            $('apiState').className = 'api-state off';
-            $('apiText').textContent = 'API apagada';
-        });
 
         const $hc = $('hcSwitch');
         const aplicarContraste = alto => {
@@ -229,7 +201,7 @@
         $hc.onclick = () => {
             const alto = $hc.getAttribute('aria-checked') !== 'true';
             aplicarContraste(alto);
-            try { localStorage.setItem('assist_contraste', alto ? 'alto' : 'normal'); } catch (_) { }
+            try { localStorage.setItem('assist_contraste', alto ? 'alto' : 'normal'); } catch (e) { }
         };
     </script>
 </body>

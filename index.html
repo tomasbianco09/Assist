@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="text-scale" content="scale">
     <title>Assist · Panel Familiar y de Pruebas</title>
-    <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23245C43'/%3E%3Ccircle cx='12.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3Ccircle cx='19.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23245C43'/%3E%3Ccircle cx='12.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3Ccircle cx='19.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3C/svg%3E">
     <script>
         (function () {
             var pref = null;
@@ -102,9 +101,9 @@
         <section class="intro">
             <p class="kicker">Panel de control · Sprint 2</p>
             <h1>Centro de asistencia para el familiar</h1>
-            <p class="lead">Desde aquí gestionas tu grupo familiar, vinculás dispositivos y realizas las acciones de
-                asistencia remota. Para probar la experiencia completa, abre la <strong>app del celular</strong> en otra
-                pestaña.</p>
+            <p class="lead">Desde aquí registrás al adulto mayor, gestionás tu grupo familiar, vinculás dispositivos y
+                realizás las acciones de asistencia remota. Para probar la experiencia completa, abrí la <strong>app del
+                    celular</strong> en otra pestaña.</p>
             <div id="bannerMiGrupoDesktop" class="pill" hidden
                 style="margin-top:0.75rem;display:inline-flex;flex-wrap:wrap;gap:0.5rem;align-items:center;"></div>
 
@@ -112,16 +111,15 @@
             <div class="QuickGuide" aria-label="Guía rápida de cómo funciona Assist">
                 <div class="guide-step">
                     <span class="guide-num">Paso A</span>
-                    <strong>Registra y arma el grupo</strong>
-                    <p>Crea usuarios y configurá el <strong>grupo familiar</strong> (token de 6 dígitos y adultos
-                        mayores) antes de generar vínculos.</p>
+                    <strong>Registra al adulto mayor</strong>
+                    <p>Creá la cuenta del <strong>adulto mayor</strong> en el Paso 01 y configurá el <strong>grupo
+                            familiar</strong> con token de 6 dígitos.</p>
                 </div>
                 <div class="guide-step">
                     <span class="guide-num">Paso B</span>
                     <strong>Vincula del mismo grupo</strong>
-                    <p>Generá el código QR solo entre un familiar aprobado y un adulto mayor que pertenezcan al
-                        <strong>mismo grupo familiar</strong>.
-                    </p>
+                    <p>Generá el código QR entre tu cuenta de familiar aprobado y un adulto mayor que pertenezca al
+                        <strong>mismo grupo familiar</strong>.</p>
                 </div>
                 <div class="guide-step">
                     <span class="guide-num">Paso C</span>
@@ -140,43 +138,34 @@
                 <!-- FASE 1: CONFIGURACIÓN INICIAL                           -->
                 <!-- ======================================================= -->
                 <div class="phase-header">
-                    <span class="phase-tag">Fase 1 · Personas, grupo familiar y vínculo</span>
-                    <p>Primero registrá personas y gestioná el grupo familiar; luego generá el vínculo QR.</p>
+                    <span class="phase-tag">Fase 1 · Adulto mayor, grupo familiar y vínculo</span>
+                    <p>Primero registrá al adulto mayor y gestioná el grupo familiar; luego generá el vínculo QR.</p>
                 </div>
 
-                <!-- 01 · Registrar -->
+                <!-- 01 · Registrar Adulto Mayor -->
                 <form class="card" id="formUsuario" novalidate>
                     <header class="card-head">
                         <span class="num" aria-hidden="true">01</span>
                         <div>
-                            <h2>Registrar a una persona</h2>
-                            <p>Crea un <strong>Familiar</strong> o un <strong>Adulto mayor</strong>. Sus IDs se cargarán
-                                solos en los formularios siguientes.</p>
+                            <h2>Registrar adulto mayor</h2>
+                            <p>Creá la cuenta del <strong>adulto mayor</strong> que va a usar la app del celular. Su ID
+                                se cargará automáticamente en el grupo familiar y en el vínculo.</p>
                         </div>
                     </header>
-                    <div class="grid-3">
+                    <div class="grid-2">
                         <div class="field-wrap">
-                            <label for="nuevoNombre">Nombre completo</label>
+                            <label for="nuevoNombre">Nombre completo del adulto mayor</label>
                             <input class="field" type="text" id="nuevoNombre" placeholder="Rosa Fernández"
                                 autocomplete="off">
                         </div>
                         <div class="field-wrap">
-                            <label for="nuevoEmail">Correo electrónico</label>
+                            <label for="nuevoEmail">Correo electrónico del adulto mayor</label>
                             <input class="field" type="email" id="nuevoEmail" placeholder="rosa@correo.com"
                                 autocomplete="off">
                         </div>
-                        <fieldset class="field-wrap">
-                            <legend>Rol en la app</legend>
-                            <div class="seg">
-                                <label><input type="radio" name="nuevoRol" value="adulto_mayor" checked><span>Adulto
-                                        mayor</span></label>
-                                <label><input type="radio" name="nuevoRol"
-                                        value="familiar"><span>Familiar</span></label>
-                            </div>
-                        </fieldset>
                     </div>
                     <div class="card-actions-row">
-                        <button class="btn primary" type="submit">Guardar persona</button>
+                        <button class="btn primary" type="submit">Guardar adulto mayor</button>
                         <p class="helper-pill" id="ultimoUsuarioCreado" hidden></p>
                     </div>
                 </form>
@@ -305,14 +294,12 @@
                         <div>
                             <h2>Vincular los celulares <small>HU-01</small></h2>
                             <p>Generá el código QR solo entre tu cuenta de familiar y un adulto mayor que pertenezca a
-                                <strong>tu mismo grupo familiar</strong>.
-                            </p>
+                                <strong>tu mismo grupo familiar</strong>.</p>
                         </div>
                     </header>
                     <div class="grid-2">
                         <div class="field-wrap">
-                            <label for="famId">ID del familiar (sesión) <span class="label-hint"
-                                    id="famHint"></span></label>
+                            <label for="famId">ID del familiar (sesión) <span class="label-hint" id="famHint"></span></label>
                             <input class="field" type="number" id="famId" value="1" min="1" readonly>
                         </div>
                         <div class="field-wrap">
@@ -321,7 +308,8 @@
                         </div>
                     </div>
                     <button class="btn primary" type="submit">Generar código QR y activar vínculo</button>
-                    <p class="helper-pill" id="alertaVinculoGrupo" hidden style="margin-top:0.65rem;color:#b42318;"></p>
+                    <p class="helper-pill" id="alertaVinculoGrupo" hidden
+                        style="margin-top:0.65rem;color:#b42318;"></p>
                     <figure class="qr" id="qrContainer" hidden>
                         <img id="qrImage" src="" alt="Código QR de vinculación">
                         <figcaption>
@@ -633,25 +621,27 @@
             ev.preventDefault();
             const nombre = $('nuevoNombre').value.trim();
             const email = $('nuevoEmail').value.trim();
-            const rol = document.querySelector('input[name="nuevoRol"]:checked').value;
             if (!nombre || !email) {
-                registrar('Registrar', 'Completa el nombre y el correo.', 'warn');
+                registrar('Registrar adulto mayor', 'Completá el nombre y el correo.', 'warn');
                 (nombre ? $('nuevoEmail') : $('nuevoNombre')).focus();
                 return;
             }
-            const data = await llamar('Registrar', '/usuarios/', post({ nombre, email, rol }), submitBtn(ev.target));
+            const data = await llamar(
+                'Registrar adulto mayor',
+                '/usuarios/',
+                post({ nombre, email, rol: 'adulto_mayor' }),
+                submitBtn(ev.target)
+            );
             if (data && !data.__error) {
                 $('nuevoNombre').value = '';
                 $('nuevoEmail').value = '';
                 const pill = $('ultimoUsuarioCreado');
                 pill.hidden = false;
-                pill.textContent = `✓ ${data.nombre} guardado con ID #${data.id} (${data.rol})`;
-                if (data.rol !== 'familiar') {
-                    $('adId').value = data.id;
-                    $('adultoId').value = data.id;
-                    $('grupoAdultoId').value = data.id;
-                    $('agregarAdultoId').value = data.id;
-                }
+                pill.textContent = `✓ Adulto mayor ${data.nombre} guardado con ID #${data.id}`;
+                $('adId').value = data.id;
+                $('adultoId').value = data.id;
+                $('grupoAdultoId').value = data.id;
+                $('agregarAdultoId').value = data.id;
                 actualizarNombresIds();
             }
         };
@@ -1291,7 +1281,7 @@
             var root = document.documentElement, ayudaProbada = false;
 
             var defs = [
-                ['formUsuario', '01', 'Personas'], ['cardGrupoFamiliar', '02', 'Grupo'], ['formVinculo', '03', 'Vínculo'],
+                ['formUsuario', '01', 'Adulto'], ['cardGrupoFamiliar', '02', 'Grupo'], ['formVinculo', '03', 'Vínculo'],
                 ['formSesion', '04', 'Pantalla'], ['formUbicacion', '05', 'Ubicación'], ['formAyuda', '06', 'SOS'],
                 ['cardHistorial', '07', 'Historial']
             ];
