@@ -6,7 +6,7 @@
   --alert:#D9381E; --alert-ink:#FFFFFF;
   --wait:#9A5B0B; --focus:#1D4ED8;
   --log-bg:#1C2B2D; --log-ink:#EDE6D8; --log-dim:#A9B4B0; --log-ok:#8FD3A9; --log-warn:#F2C46D; --log-err:#FF9F8F;
-  --bw:2px; --radius:1rem;
+  --bw:2px; --radius:1rem; --col:60rem; /* ancho único de columna: header, intro y tarjetas */
   --display:'Fraunces',Georgia,'Times New Roman',serif;
   --text:'Atkinson Hyperlegible Next','Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'Atkinson Hyperlegible Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
@@ -33,7 +33,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 
 .top{border-bottom:var(--bw) solid var(--line);background:var(--bg) var(--grain)}
 @media (min-width:64rem){.top{position:sticky;top:0;z-index:20}}
-.top-in{max-width:68rem;margin:0 auto;padding:calc(.8rem + env(safe-area-inset-top)) 1.25rem .8rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1.25rem}
+.top-in{max-width:var(--col);margin:0 auto;padding:calc(.8rem + env(safe-area-inset-top)) 1.25rem .8rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1.25rem}
 .brand{display:inline-flex;align-items:center;gap:.45em;font-family:var(--display);font-weight:600;font-size:1.5rem;letter-spacing:-.01em}
 .mark{width:1.3em;height:1.3em}
 .mark rect{fill:var(--primary);stroke:none}
@@ -58,7 +58,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 .api-state.off .dot{background:var(--stop)}
 .api-state.on,.api-state.off{color:var(--ink)}
 
-.page{max-width:68rem;margin:0 auto;padding:2rem 1.25rem calc(3rem + env(safe-area-inset-bottom))}
+.page{max-width:var(--col);margin:0 auto;padding:2rem 1.25rem calc(3rem + env(safe-area-inset-bottom))}
 
 /* Banner Push SOS (SCRUM-49) */
 .push-banner{
@@ -94,7 +94,7 @@ h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,1.4rem + 2.2v
 .guide-step p{font-size:.94rem;color:var(--ink-2);line-height:1.45}
 
 /* Layout a ancho completo para centrar las cajas */
-.layout-full{display:flex;flex-direction:column;gap:1.5rem;max-width:54rem;margin:0 auto}
+.layout-full{display:flex;flex-direction:column;gap:1.5rem;margin:0 auto}
 .steps{display:flex;flex-direction:column;gap:1.15rem}
 
 /* Separadores de Fase */
@@ -165,7 +165,7 @@ legend{padding:0;margin-bottom:.35rem}
 .btn:active{transform:scale(.985)}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
-.btn.primary:hover:not([disabled])[disabled]{background:var(--primary-hover)}
+.btn.primary:hover:not([disabled]){background:var(--primary-hover)}
 .btn.alert{background:var(--alert);border-color:var(--alert);color:var(--alert-ink)}
 .btn.stop{background:var(--stop);border-color:var(--stop);color:var(--stop-ink)}
 
@@ -254,3 +254,145 @@ legend{padding:0;margin-bottom:.35rem}
 @media (max-width:34rem){
   #formAyuda .btn.alert{width:100%}
 }
+
+/* =========================================================
+   Grupo familiar: componentes que el HTML usaba sin estilo
+   ========================================================= */
+
+/* Etiquetas y chips de estado (los modificadores is-* son opcionales, se activan desde JS) */
+.step-tag{display:block;font-family:var(--mono);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--primary);margin-bottom:.15rem}
+:root[data-contrast="high"] .step-tag{color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:.5em;padding:.4em .9em;border:var(--bw) solid var(--line);border-radius:999px;background:var(--bg);font-size:.88rem;font-weight:700;line-height:1.3;color:var(--ink-2)}
+:root[data-contrast="high"] .pill{color:var(--ink)}
+.pill.is-ok{border-color:var(--primary);color:var(--primary)}
+.pill.is-warn{border-color:var(--wait);color:var(--wait)}
+.pill.is-error{border-color:var(--stop);color:var(--stop)}
+.card-head>.pill{flex:none;margin-left:auto;white-space:nowrap}
+.intro .pill{margin-bottom:1.4rem;padding:.55em 1em;border-radius:.8rem;background:var(--surface);color:var(--ink)}
+
+/* Textos y cajas de resultado */
+.card-desc,.muted{color:var(--ink-2);font-size:.95rem}
+.result-box{padding:.65rem .9rem;border:1px dashed var(--primary);border-radius:.6rem;background:var(--bg);font-size:.92rem;overflow-wrap:anywhere}
+
+/* Sub-formularios: dos paneles parejos, con el botón siempre abajo */
+.sub-box{display:flex;flex-direction:column;gap:.9rem}
+.sub-box h3{font-family:var(--display);font-weight:600;font-size:1.1rem;line-height:1.25}
+.grid-2>.sub-box{padding:1.1rem;border:var(--bw) solid var(--line);border-radius:.9rem}
+.sub-box>.btn{align-self:stretch;margin-top:auto}
+
+/* Filas "campos + botón": el botón se apoya en la base de los inputs */
+.row-inline{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.9rem}
+.row-inline .field-wrap{flex:1 1 9rem}
+.row-inline .field,.row-inline .btn{min-height:3rem}
+.row-inline .btn{align-self:flex-end;flex:0 0 auto}
+
+/* Botón secundario y campos de solo lectura */
+.btn.ghost{background:transparent}
+.btn.ghost:hover:not([disabled]){background:var(--bg)}
+.field::placeholder{color:var(--ink-2);opacity:.65}
+.field[readonly]{border-style:dashed;background:transparent;color:var(--ink-2)}
+
+/* Tabla de integrantes */
+.hist-table th{white-space:nowrap}
+.hist-table td{vertical-align:middle}
+.hist-table tbody tr:last-child td{border-bottom:0}
+.hist-table td[colspan]{padding:1.25rem;text-align:center;color:var(--ink-2)}
+
+@media (max-width:34rem){
+  .row-inline .btn{flex:1 1 100%}
+}
+
+/* =========================================================
+   Índice de progreso fijo (solo informa; nunca oculta tarjetas)
+   ========================================================= */
+:root{--top-h:0px;--nav-h:0px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+.steps .card,.steps .phase-header{scroll-margin-top:calc(var(--top-h) + var(--nav-h) + 1rem)}
+
+.progress{position:sticky;top:var(--top-h);z-index:15;padding:.5rem 0;background:var(--bg) var(--grain)}
+.progress-in{display:flex;align-items:center;gap:.5rem .9rem;padding:.45rem .6rem;background:var(--surface);border:var(--bw) solid var(--line-strong);border-radius:var(--radius)}
+.progress-sum{flex:none;padding-left:.4rem;font-size:.85rem;font-weight:700;color:var(--ink-2)}
+.progress-list{list-style:none;padding:0;margin:0;display:flex;flex:1;gap:.25rem;overflow-x:auto;scrollbar-width:thin}
+.progress-list li{flex:1 0 auto}
+.p-link{display:flex;align-items:center;gap:.5rem;min-height:2.6rem;padding:.3rem .6rem;border:var(--bw) solid transparent;border-radius:.7rem;color:var(--ink);text-decoration:none;white-space:nowrap}
+.p-link:hover{background:var(--bg)}
+.p-link[aria-current="step"]{border-color:var(--line-strong);background:var(--bg)}
+.p-dot{flex:none;width:1.6rem;height:1.6rem;display:grid;place-items:center;border:var(--bw) solid var(--line-strong);border-radius:50%;font-family:var(--mono);font-size:.7rem;font-weight:700}
+.p-text{display:flex;flex-direction:column;line-height:1.15}
+.p-label{font-size:.88rem;font-weight:700}
+.p-state{font-size:.74rem;color:var(--ink-2)}
+.progress-list [data-state="hecho"] .p-dot{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.progress-list [data-state="curso"] .p-dot{border-style:dashed;border-color:var(--wait);color:var(--wait)}
+.progress-list [data-state="curso"] .p-state{color:var(--wait);font-weight:700}
+@media (max-width:40rem){.progress-sum{display:none}}
+
+/* Pasos opcionales o a demanda: no se ven como pendientes y quedan separados de la configuración */
+.progress-list [data-state="libre"] .p-dot{border-style:dotted}
+.progress-list [data-paso="formSesion"]{margin-left:.35rem;padding-left:.5rem;border-left:var(--bw) solid var(--line)}
+
+/* =========================================================
+   Responsive — breakpoints de los dispositivos más comunes
+   ≤30rem   celulares (360 · 390 · 412 · 430 px)
+   ≤40rem   celulares grandes y en horizontal
+   <48rem   debajo de tablet (≤767 px)  ·  ≥48rem tablets (768 · 820 px)
+   ≥64rem   notebooks (1024 · 1280 · 1366 px)
+   ≥90rem   monitores (1440 · 1536 px)
+   ≥120rem  Full HD y 2K (1920 px en adelante)
+   ========================================================= */
+:root{--gutter:1.25rem}
+.top-in,.page{padding-left:max(var(--gutter),env(safe-area-inset-left));padding-right:max(var(--gutter),env(safe-area-inset-right))}
+
+/* Las tablas se desplazan dentro de su caja en vez de aplastarse */
+.hist-table{min-width:36rem}
+#tablaMiembrosGrupo{min-width:44rem}
+
+/* Barra de progreso: se desliza con el dedo y cada paso se centra */
+.progress-list{position:relative;scroll-snap-type:x proximity}
+.progress-list li{scroll-snap-align:center}
+
+/* Pantallas táctiles: objetivos de toque de al menos 44 px */
+@media (pointer:coarse){
+  .chip,.close-btn,.link-btn{min-height:2.75rem}
+  .p-link{min-height:2.9rem}
+}
+/* Celular en horizontal: la barra de progreso no se queda fija para no tapar el contenido */
+@media (max-height:32rem){.progress{position:static}}
+
+/* Guía rápida: 1 columna en celular, 3 desde tablet */
+@media (max-width:47.99rem){
+  .QuickGuide{grid-template-columns:1fr}
+  .phase-header{flex-direction:column;align-items:flex-start}
+}
+@media (min-width:48rem){
+  .QuickGuide{grid-template-columns:repeat(3,1fr)}
+}
+
+@media (max-width:40rem){
+  .top-in{gap:.6rem}
+  .top-actions{width:100%}
+  .top-actions .chip{flex:1 1 auto;justify-content:center}
+  .card-head{flex-wrap:wrap}
+  .card-head>.pill{flex:1 1 100%;margin-left:0;white-space:normal}
+  /* El registro técnico se abre como hoja inferior */
+  .log-modal{padding:0;align-items:end}
+  .log-modal-content{max-width:none;max-height:92dvh;border-radius:var(--radius) var(--radius) 0 0}
+}
+
+@media (max-width:30rem){
+  :root{--gutter:1rem}
+  .page{padding-top:1.25rem}
+  .card{padding:1.1rem 1rem 1.2rem;gap:.9rem}
+  .card-head{gap:.7rem}
+  .card h2{font-size:1.2rem}
+  .num{font-size:1.8rem;min-width:1.2em}
+  .grid-2>.sub-box{padding:.9rem}
+  .field-wrap.narrow{max-width:none}
+  .card>.btn,.card-actions-row>.btn:not(.alert),.push-banner .btn{width:100%}
+  .helper-pill{width:100%;text-align:center}
+  .map-canvas{height:14rem}
+  .progress-in{padding:.35rem}
+}
+
+@media (min-width:64rem){.map-canvas{height:20rem}}
+@media (min-width:90rem){:root{--col:64rem}}
+@media (min-width:120rem){html{font-size:112.5%}}

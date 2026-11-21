@@ -19,11 +19,13 @@ import schemas
 # Crea las tablas automáticamente en SQLite al arrancar
 Base.metadata.create_all(bind=engine)
 
-# Migración ligera automática por si assist.db ya existía del Sprint 1
+
+# Migración ligera automática por si assist.db ya existía
 def asegurar_columnas_sprint2():
     alteraciones = [
         ("usuarios", "conectado", "INTEGER DEFAULT 1"),
         ("solicitudes", "fecha_creacion", "DATETIME"),
+        ("solicitudes", "destino_familiar_id", "INTEGER"),
         ("sesiones_remotas", "fecha_inicio", "DATETIME"),
         ("sesiones_remotas", "fecha_fin", "DATETIME"),
         ("sesiones_remotas", "duracion_segundos", "INTEGER"),
@@ -36,6 +38,7 @@ def asegurar_columnas_sprint2():
                 conn.commit()
             except Exception:
                 pass
+
 
 asegurar_columnas_sprint2()
 
@@ -53,12 +56,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 def cerrar_registro_sesion(sesion: models.SesionRemotaModel, nuevo_estado: str, autor: str):
     ahora = datetime.datetime.utcnow()
@@ -70,6 +75,7 @@ def cerrar_registro_sesion(sesion: models.SesionRemotaModel, nuevo_estado: str, 
     else:
         sesion.duracion_segundos = 0
 
+
 def generar_token_6_digitos(db: Session) -> str:
     for _ in range(30):
         token = f"{random.randint(0, 999999):06d}"
@@ -80,9 +86,119 @@ def generar_token_6_digitos(db: Session) -> str:
             return token
     raise HTTPException(status_code=500, detail="No se pudo generar un token único de 6 dígitos.")
 
+
+def asegurar_vinculo(db: Session, familiar_id: int, adulto_id: int):
+    vinculo = db.query(models.VinculoModel).filter(
+        models.VinculoModel.familiar_id == familiar_id,
+        models.VinculoModel.adulto_id == adulto_id
+    ).first()
+    if not vinculo:
+        vinculo = models.VinculoModel(
+            familiar_id=familiar_id,
+            adulto_id=adulto_id,
+            codigo_qr=str(uuid.uuid4())
+        )
+        db.add(vinculo)
+        db.flush()
+    return vinculo
+
+
+def obtener_adultos_de_grupo(db: Session, grupo: models.GrupoFamiliarModel):
+    relaciones = db.query(models.GrupoAdultoModel).filter(
+        models.GrupoAdultoModel.grupo_id == grupo.id
+    ).all()
+    adulto_ids = [r.adulto_id for r in relaciones]
+    if grupo.adulto_id and grupo.adulto_id not in adulto_ids:
+        adulto_ids.insert(0, grupo.adulto_id)
+
+    salida = []
+    for aid in adulto_ids:
+        u = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == aid).first()
+        if u:
+            salida.append({
+                "adulto_id": u.id,
+                "adulto_nombre": u.nombre,
+                "adulto_email": u.email
+            })
+    return salida
+
+
+def obtener_grupo_id_de_adulto(db: Session, adulto_id: int):
+    rel_adulto = db.query(models.GrupoAdultoModel).filter(
+        models.GrupoAdultoModel.adulto_id == adulto_id
+    ).first()
+    if rel_adulto:
+        return rel_adulto.grupo_id
+
+    grupo_legacy = db.query(models.GrupoFamiliarModel).filter(
+        models.GrupoFamiliarModel.adulto_id == adulto_id
+    ).first()
+    return grupo_legacy.id if grupo_legacy else None
+
+
+def verificar_familiar_en_grupo_del_adulto(db: Session, familiar_id: int, adulto_id: int):
+    grupo_id = obtener_grupo_id_de_adulto(db, adulto_id)
+    if not grupo_id:
+        raise HTTPException(
+            status_code=403,
+            detail="El adulto mayor no pertenece a ningún grupo familiar activo."
+        )
+
+    membresia = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == grupo_id,
+        models.MiembroGrupoModel.familiar_id == familiar_id,
+        models.MiembroGrupoModel.estado == "aprobado"
+    ).first()
+
+    if not membresia:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo un familiar aprobado del mismo grupo familiar puede solicitar permisos de pantalla o ubicación."
+        )
+    return grupo_id
+
+
+def verificar_mismo_grupo_para_vinculo(db: Session, familiar_id: int, adulto_id: int):
+    membresias_fam = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.familiar_id == familiar_id,
+        models.MiembroGrupoModel.estado == "aprobado"
+    ).all()
+
+    if not membresias_fam:
+        raise HTTPException(
+            status_code=403,
+            detail="El familiar no pertenece a ningún grupo familiar aprobado. Primero creá o unite a un grupo familiar."
+        )
+
+    grupo_adulto_id = obtener_grupo_id_de_adulto(db, adulto_id)
+    if not grupo_adulto_id:
+        raise HTTPException(
+            status_code=403,
+            detail="El adulto mayor no pertenece a ningún grupo familiar. Agregalo primero a tu grupo familiar."
+        )
+
+    grupos_fam_ids = {m.grupo_id for m in membresias_fam}
+    if grupo_adulto_id not in grupos_fam_ids:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés generar el vínculo porque el familiar y el adulto mayor no pertenecen al mismo grupo familiar."
+        )
+
+
+def validar_dueno_vinculo_y_grupo(db: Session, vinculo: models.VinculoModel, solicitante_familiar_id: int | None):
+    if solicitante_familiar_id is not None and vinculo.familiar_id != solicitante_familiar_id:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés usar este vínculo porque pertenece a otro familiar."
+        )
+    familiar_a_validar = solicitante_familiar_id if solicitante_familiar_id is not None else vinculo.familiar_id
+    verificar_familiar_en_grupo_del_adulto(db, familiar_a_validar, vinculo.adulto_id)
+
+
 @app.get("/")
 def read_root():
     return {"mensaje": "¡Bienvenido a la API de Assist! Servidor activo 🚀"}
+
 
 # ==========================================
 # 1. Gestión de Usuarios e Ingreso/Salida
@@ -92,7 +208,7 @@ def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db))
     db_usuario = db.query(models.UsuarioModel).filter(models.UsuarioModel.email == usuario.email).first()
     if db_usuario:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
-    
+
     nuevo_usuario = models.UsuarioModel(
         nombre=usuario.nombre,
         email=usuario.email,
@@ -102,14 +218,27 @@ def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db))
     db.add(nuevo_usuario)
     db.commit()
     db.refresh(nuevo_usuario)
-    return {"id": nuevo_usuario.id, "nombre": nuevo_usuario.nombre, "rol": nuevo_usuario.rol, "mensaje": "Usuario creado con éxito"}
+    return {
+        "id": nuevo_usuario.id,
+        "nombre": nuevo_usuario.nombre,
+        "rol": nuevo_usuario.rol,
+        "mensaje": "Usuario creado con éxito"
+    }
+
 
 @app.get("/usuarios/{usuario_id}")
 def obtener_usuario(usuario_id: int, db: Session = Depends(get_db)):
     usuario = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == usuario_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return {"id": usuario.id, "nombre": usuario.nombre, "email": usuario.email, "rol": usuario.rol, "conectado": bool(usuario.conectado)}
+    return {
+        "id": usuario.id,
+        "nombre": usuario.nombre,
+        "email": usuario.email,
+        "rol": usuario.rol,
+        "conectado": bool(usuario.conectado)
+    }
+
 
 @app.post("/usuarios/ingresar/")
 def ingresar(ingreso: schemas.IngresoRequest, db: Session = Depends(get_db)):
@@ -119,7 +248,13 @@ def ingresar(ingreso: schemas.IngresoRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No encontramos una cuenta con ese correo")
     usuario.conectado = 1
     db.commit()
-    return {"id": usuario.id, "nombre": usuario.nombre, "email": usuario.email, "rol": usuario.rol}
+    return {
+        "id": usuario.id,
+        "nombre": usuario.nombre,
+        "email": usuario.email,
+        "rol": usuario.rol
+    }
+
 
 @app.post("/usuarios/{usuario_id}/salir/")
 def salir(usuario_id: int, db: Session = Depends(get_db)):
@@ -156,6 +291,96 @@ def salir(usuario_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"mensaje": "Sesión cerrada", "sesiones_cerradas": len(sesiones)}
 
+
+@app.get("/usuarios/{usuario_id}/grupo/")
+def obtener_grupo_de_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    usuario = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    grupo = None
+    rol_en_grupo = None
+    estado_en_grupo = None
+
+    if usuario.rol == "adulto_mayor":
+        rel = db.query(models.GrupoAdultoModel).filter(
+            models.GrupoAdultoModel.adulto_id == usuario.id
+        ).first()
+        if rel:
+            grupo = db.query(models.GrupoFamiliarModel).filter(
+                models.GrupoFamiliarModel.id == rel.grupo_id
+            ).first()
+        else:
+            grupo = db.query(models.GrupoFamiliarModel).filter(
+                models.GrupoFamiliarModel.adulto_id == usuario.id
+            ).first()
+        if grupo:
+            rol_en_grupo = "adulto_mayor"
+            estado_en_grupo = "activo"
+    else:
+        membresia_aprobada = db.query(models.MiembroGrupoModel).filter(
+            models.MiembroGrupoModel.familiar_id == usuario.id,
+            models.MiembroGrupoModel.estado == "aprobado"
+        ).order_by(models.MiembroGrupoModel.id.desc()).first()
+
+        if membresia_aprobada:
+            grupo = db.query(models.GrupoFamiliarModel).filter(
+                models.GrupoFamiliarModel.id == membresia_aprobada.grupo_id
+            ).first()
+            rol_en_grupo = membresia_aprobada.rol_grupo
+            estado_en_grupo = membresia_aprobada.estado
+        else:
+            ultima = db.query(models.MiembroGrupoModel).filter(
+                models.MiembroGrupoModel.familiar_id == usuario.id
+            ).order_by(models.MiembroGrupoModel.id.desc()).first()
+            if ultima and ultima.estado == "pendiente":
+                grupo = db.query(models.GrupoFamiliarModel).filter(
+                    models.GrupoFamiliarModel.id == ultima.grupo_id
+                ).first()
+                rol_en_grupo = ultima.rol_grupo
+                estado_en_grupo = "pendiente"
+            else:
+                return {
+                    "tiene_grupo": False,
+                    "estado_solicitud": ultima.estado if ultima else None
+                }
+
+    if not grupo:
+        return {"tiene_grupo": False}
+
+    adultos = obtener_adultos_de_grupo(db, grupo)
+    miembros = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == grupo.id,
+        models.MiembroGrupoModel.estado == "aprobado"
+    ).all()
+
+    nombres_familiares = []
+    familiares_detalle = []
+    for m in miembros:
+        fam = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == m.familiar_id).first()
+        if fam:
+            etiqueta = f"{fam.nombre} (Admin)" if m.rol_grupo == "admin" else fam.nombre
+            nombres_familiares.append(etiqueta)
+            familiares_detalle.append({
+                "familiar_id": fam.id,
+                "nombre": fam.nombre,
+                "rol_grupo": m.rol_grupo
+            })
+
+    return {
+        "tiene_grupo": True,
+        "grupo_id": grupo.id,
+        "nombre": grupo.nombre,
+        "codigo_token": grupo.codigo_token,
+        "adultos": adultos,
+        "adulto_nombre": adultos[0]["adulto_nombre"] if adultos else "Adulto mayor",
+        "rol_en_grupo": rol_en_grupo,
+        "estado_en_grupo": estado_en_grupo,
+        "familiares_aprobados": nombres_familiares,
+        "familiares": familiares_detalle
+    }
+
+
 # ==========================================
 # 2. HU-01: Vínculo por QR (Corrige D-05 y D-06)
 # ==========================================
@@ -163,13 +388,21 @@ def salir(usuario_id: int, db: Session = Depends(get_db)):
 def generar_qr_vinculo(vinculo: schemas.VinculoCreate, db: Session = Depends(get_db)):
     familiar = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == vinculo.familiar_id).first()
     adulto = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == vinculo.adulto_id).first()
-    
+
     if not familiar or not adulto:
         raise HTTPException(status_code=404, detail="Familiar o Adulto Mayor no encontrado")
     if familiar.rol != "familiar":
         raise HTTPException(status_code=400, detail=f"El usuario '{familiar.nombre}' no tiene el rol de familiar (su rol es {familiar.rol})")
     if adulto.rol != "adulto_mayor":
         raise HTTPException(status_code=400, detail=f"El usuario '{adulto.nombre}' no tiene el rol de adulto mayor (su rol es {adulto.rol})")
+
+    if vinculo.solicitante_familiar_id is not None and vinculo.familiar_id != vinculo.solicitante_familiar_id:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés crear un vínculo usando el ID de otro familiar."
+        )
+
+    verificar_mismo_grupo_para_vinculo(db, vinculo.familiar_id, vinculo.adulto_id)
 
     codigo_token = str(uuid.uuid4())
 
@@ -196,22 +429,23 @@ def generar_qr_vinculo(vinculo: schemas.VinculoCreate, db: Session = Depends(get
         db.add(registro_vinculo)
         db.commit()
         db.refresh(registro_vinculo)
-    
+
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(codigo_token)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
-    
+
     buffered = io.BytesIO()
     img.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    
+
     return {
         "mensaje": "Vínculo y código QR generados correctamente",
         "vinculo_id": registro_vinculo.id,
         "codigo_token": codigo_token,
         "qr_imagen_base64": qr_base64
     }
+
 
 # ==========================================
 # 3. HU-02 y SCRUM-49: Alertas y Notificaciones Push
@@ -223,29 +457,44 @@ def pedir_ayuda(solicitud: schemas.SolicitudCreate, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     if usuario.rol != "adulto_mayor":
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail=f"Acción denegada: El usuario '{usuario.nombre}' es un {usuario.rol}. Solo los adultos mayores pueden pedir asistencia."
         )
 
+    destino_nombre = "Todos los familiares del grupo"
+    if solicitud.destino_familiar_id is not None:
+        destino = db.query(models.UsuarioModel).filter(
+            models.UsuarioModel.id == solicitud.destino_familiar_id,
+            models.UsuarioModel.rol == "familiar"
+        ).first()
+        if not destino:
+            raise HTTPException(status_code=404, detail="Familiar destinatario no encontrado")
+        verificar_familiar_en_grupo_del_adulto(db, destino.id, usuario.id)
+        destino_nombre = destino.nombre
+
     nueva_solicitud = models.SolicitudModel(
         usuario_id=solicitud.usuario_id,
+        destino_familiar_id=solicitud.destino_familiar_id,
         estado="pendiente",
         fecha_creacion=datetime.datetime.utcnow()
     )
     db.add(nueva_solicitud)
     db.commit()
     db.refresh(nueva_solicitud)
-    
+
     return {
-        "mensaje": "Alerta de ayuda enviada correctamente",
+        "mensaje": f"Alerta de ayuda enviada a: {destino_nombre}",
         "solicitud_id": nueva_solicitud.id,
         "usuario": usuario.nombre,
+        "destino_familiar_id": nueva_solicitud.destino_familiar_id,
+        "destino_nombre": destino_nombre,
         "estado": nueva_solicitud.estado,
         "fecha_creacion": nueva_solicitud.fecha_creacion.isoformat()
     }
 
+
 @app.get("/solicitudes/pendientes/")
-def listar_solicitudes_pendientes(db: Session = Depends(get_db)):
+def listar_solicitudes_pendientes(familiar_id: int = None, db: Session = Depends(get_db)):
     filas = (
         db.query(models.SolicitudModel, models.UsuarioModel)
         .join(models.UsuarioModel, models.SolicitudModel.usuario_id == models.UsuarioModel.id)
@@ -253,16 +502,71 @@ def listar_solicitudes_pendientes(db: Session = Depends(get_db)):
         .order_by(models.SolicitudModel.id.desc())
         .all()
     )
-    return [
-        {
+    salida = []
+    for s, u in filas:
+        if familiar_id is not None:
+            grupo_id = obtener_grupo_id_de_adulto(db, u.id)
+            if not grupo_id:
+                continue
+            es_aprobado = db.query(models.MiembroGrupoModel).filter(
+                models.MiembroGrupoModel.grupo_id == grupo_id,
+                models.MiembroGrupoModel.familiar_id == familiar_id,
+                models.MiembroGrupoModel.estado == "aprobado"
+            ).first()
+            if not es_aprobado:
+                continue
+            if s.destino_familiar_id is not None and s.destino_familiar_id != familiar_id:
+                continue
+
+        destino_nombre = "Todos los familiares"
+        if s.destino_familiar_id is not None:
+            dest = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == s.destino_familiar_id).first()
+            destino_nombre = dest.nombre if dest else f"Familiar #{s.destino_familiar_id}"
+
+        salida.append({
             "solicitud_id": s.id,
             "usuario_id": u.id,
             "adulto_nombre": u.nombre,
+            "destino_familiar_id": s.destino_familiar_id,
+            "destino_nombre": destino_nombre,
             "estado": s.estado,
             "fecha_creacion": s.fecha_creacion.isoformat() if s.fecha_creacion else None
-        }
-        for s, u in filas
-    ]
+        })
+    return salida
+
+
+@app.post("/solicitudes/{solicitud_id}/aceptar-y-vincular/")
+def aceptar_alerta_y_vincular(solicitud_id: int, req: schemas.AceptarAlertaRequest, db: Session = Depends(get_db)):
+    solicitud = db.query(models.SolicitudModel).filter(models.SolicitudModel.id == solicitud_id).first()
+    if not solicitud:
+        raise HTTPException(status_code=404, detail="Solicitud de ayuda no encontrada")
+
+    familiar = db.query(models.UsuarioModel).filter(
+        models.UsuarioModel.id == req.familiar_id,
+        models.UsuarioModel.rol == "familiar"
+    ).first()
+    if not familiar:
+        raise HTTPException(status_code=404, detail="Familiar no encontrado")
+
+    verificar_familiar_en_grupo_del_adulto(db, familiar.id, solicitud.usuario_id)
+    if solicitud.destino_familiar_id is not None and solicitud.destino_familiar_id != familiar.id:
+        raise HTTPException(status_code=403, detail="Esta alerta fue dirigida a otro familiar en específico.")
+
+    vinculo = asegurar_vinculo(db, familiar.id, solicitud.usuario_id)
+    solicitud.estado = "atendida"
+    db.commit()
+    db.refresh(vinculo)
+
+    accion = req.accion if req.accion in ("pantalla", "ubicacion") else "pantalla"
+    return {
+        "solicitud_id": solicitud.id,
+        "vinculo_id": vinculo.id,
+        "familiar_id": familiar.id,
+        "adulto_id": solicitud.usuario_id,
+        "accion": accion,
+        "mensaje": f"Vínculo #{vinculo.id} listo para {accion}."
+    }
+
 
 @app.put("/solicitudes/{solicitud_id}/atender/")
 def atender_solicitud(solicitud_id: int, db: Session = Depends(get_db)):
@@ -273,6 +577,7 @@ def atender_solicitud(solicitud_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"solicitud_id": solicitud.id, "estado": solicitud.estado, "mensaje": "Alerta marcada como atendida"}
 
+
 # ==========================================
 # 4. HU-03 y HU-08: Sesiones Remotas e Historial
 # ==========================================
@@ -281,6 +586,8 @@ def solicitar_sesion(sesion: schemas.SesionRemotaCreate, db: Session = Depends(g
     vinculo = db.query(models.VinculoModel).filter(models.VinculoModel.id == sesion.vinculo_id).first()
     if not vinculo:
         raise HTTPException(status_code=404, detail="Vínculo no encontrado")
+
+    validar_dueno_vinculo_y_grupo(db, vinculo, sesion.solicitante_familiar_id)
 
     adulto = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == vinculo.adulto_id).first()
     if adulto and adulto.conectado == 0:
@@ -302,7 +609,7 @@ def solicitar_sesion(sesion: schemas.SesionRemotaCreate, db: Session = Depends(g
             status_code=409,
             detail="Ya hay una solicitud pendiente de respuesta para este vínculo."
         )
-    
+
     nueva_sesion = models.SesionRemotaModel(
         vinculo_id=sesion.vinculo_id,
         estado="pendiente_consentimiento",
@@ -311,12 +618,13 @@ def solicitar_sesion(sesion: schemas.SesionRemotaCreate, db: Session = Depends(g
     db.add(nueva_sesion)
     db.commit()
     db.refresh(nueva_sesion)
-    
+
     return {
         "mensaje": "Solicitud de visualización enviada. Esperando consentimiento del adulto mayor.",
         "sesion_id": nueva_sesion.id,
         "estado": nueva_sesion.estado
     }
+
 
 @app.put("/sesiones/{sesion_id}/responder/")
 def responder_sesion(sesion_id: int, aceptar: bool, db: Session = Depends(get_db)):
@@ -325,7 +633,7 @@ def responder_sesion(sesion_id: int, aceptar: bool, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
     if sesion.estado != "pendiente_consentimiento":
         raise HTTPException(status_code=409, detail=f"La solicitud ya fue respondida (estado: {sesion.estado})")
-    
+
     if aceptar:
         sesion.estado = "activa"
         sesion.fecha_inicio = datetime.datetime.utcnow()
@@ -333,9 +641,10 @@ def responder_sesion(sesion_id: int, aceptar: bool, db: Session = Depends(get_db
     else:
         cerrar_registro_sesion(sesion, "rechazada", "adulto_mayor")
         mensaje = "Sesión rechazada por el adulto mayor."
-    
+
     db.commit()
     return {"sesion_id": sesion.id, "estado": sesion.estado, "mensaje": mensaje}
+
 
 @app.get("/sesiones/pendientes/{adulto_id}")
 def sesiones_pendientes(adulto_id: int, db: Session = Depends(get_db)):
@@ -353,6 +662,7 @@ def sesiones_pendientes(adulto_id: int, db: Session = Depends(get_db)):
         for s, f in filas
     ]
 
+
 @app.get("/sesiones/historial/")
 def historial_sesiones(adulto_id: int = None, db: Session = Depends(get_db)):
     filas = db.query(models.SesionRemotaModel, models.VinculoModel).join(
@@ -360,7 +670,7 @@ def historial_sesiones(adulto_id: int = None, db: Session = Depends(get_db)):
     )
     if adulto_id is not None:
         filas = filas.filter(models.VinculoModel.adulto_id == adulto_id)
-    
+
     registros = filas.order_by(models.SesionRemotaModel.id.desc()).limit(30).all()
     usuarios_map = {u.id: u.nombre for u in db.query(models.UsuarioModel).all()}
 
@@ -382,6 +692,7 @@ def historial_sesiones(adulto_id: int = None, db: Session = Depends(get_db)):
         })
     return resultado
 
+
 @app.get("/sesiones/{sesion_id}")
 def obtener_sesion(sesion_id: int, db: Session = Depends(get_db)):
     sesion = db.query(models.SesionRemotaModel).filter(models.SesionRemotaModel.id == sesion_id).first()
@@ -395,6 +706,7 @@ def obtener_sesion(sesion_id: int, db: Session = Depends(get_db)):
         "cerrada_por": sesion.cerrada_por
     }
 
+
 @app.put("/sesiones/{sesion_id}/finalizar/")
 def finalizar_sesion(sesion_id: int, autor: str = "familiar", db: Session = Depends(get_db)):
     sesion = db.query(models.SesionRemotaModel).filter(models.SesionRemotaModel.id == sesion_id).first()
@@ -402,7 +714,7 @@ def finalizar_sesion(sesion_id: int, autor: str = "familiar", db: Session = Depe
         raise HTTPException(status_code=404, detail="Sesión no encontrada")
     if sesion.estado not in ("pendiente_consentimiento", "activa"):
         raise HTTPException(status_code=409, detail=f"La sesión ya está {sesion.estado}")
-    
+
     cerrar_registro_sesion(sesion, "finalizada", autor)
     db.commit()
     return {
@@ -413,6 +725,7 @@ def finalizar_sesion(sesion_id: int, autor: str = "familiar", db: Session = Depe
         "mensaje": "Sesión finalizada."
     }
 
+
 # ==========================================
 # 5. HU-06 (SCRUM-35): Geolocalización bajo Demanda
 # ==========================================
@@ -421,6 +734,8 @@ def solicitar_ubicacion(req: schemas.UbicacionCreate, db: Session = Depends(get_
     vinculo = db.query(models.VinculoModel).filter(models.VinculoModel.id == req.vinculo_id).first()
     if not vinculo:
         raise HTTPException(status_code=404, detail="Vínculo no encontrado")
+
+    validar_dueno_vinculo_y_grupo(db, vinculo, req.solicitante_familiar_id)
 
     adulto = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == vinculo.adulto_id).first()
     if adulto and adulto.conectado == 0:
@@ -454,6 +769,7 @@ def solicitar_ubicacion(req: schemas.UbicacionCreate, db: Session = Depends(get_
         "estado": nueva_ubi.estado
     }
 
+
 @app.get("/ubicaciones/pendientes/{adulto_id}")
 def ubicaciones_pendientes(adulto_id: int, db: Session = Depends(get_db)):
     filas = (
@@ -474,6 +790,7 @@ def ubicaciones_pendientes(adulto_id: int, db: Session = Depends(get_db)):
         }
         for u, f in filas
     ]
+
 
 @app.put("/ubicaciones/{ubicacion_id}/responder/")
 def responder_ubicacion(ubicacion_id: int, resp: schemas.UbicacionResponder, db: Session = Depends(get_db)):
@@ -502,6 +819,7 @@ def responder_ubicacion(ubicacion_id: int, resp: schemas.UbicacionResponder, db:
         "mensaje": mensaje
     }
 
+
 @app.get("/ubicaciones/{ubicacion_id}")
 def obtener_ubicacion(ubicacion_id: int, db: Session = Depends(get_db)):
     ubi = db.query(models.UbicacionModel).filter(models.UbicacionModel.id == ubicacion_id).first()
@@ -519,6 +837,7 @@ def obtener_ubicacion(ubicacion_id: int, db: Session = Depends(get_db)):
         "fecha_respuesta": ubi.fecha_respuesta.isoformat() if ubi.fecha_respuesta else None
     }
 
+
 @app.put("/ubicaciones/{ubicacion_id}/finalizar/")
 def finalizar_ubicacion(ubicacion_id: int, db: Session = Depends(get_db)):
     ubi = db.query(models.UbicacionModel).filter(models.UbicacionModel.id == ubicacion_id).first()
@@ -531,8 +850,9 @@ def finalizar_ubicacion(ubicacion_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"ubicacion_id": ubi.id, "estado": ubi.estado, "mensaje": "Visualización de ubicación finalizada."}
 
+
 # ==========================================
-# 6. Grupos Familiares (Token 6 dígitos + Admin)
+# 6. Grupos Familiares (Multi-adulto + Token 6 dígitos + Admin)
 # ==========================================
 @app.post("/grupos/")
 def crear_grupo_familiar(req: schemas.GrupoCrearRequest, db: Session = Depends(get_db)):
@@ -543,17 +863,18 @@ def crear_grupo_familiar(req: schemas.GrupoCrearRequest, db: Session = Depends(g
     if not adulto:
         raise HTTPException(status_code=404, detail="Adulto mayor no encontrado")
 
-    grupo_existente = db.query(models.GrupoFamiliarModel).filter(
+    ya_en_grupo = db.query(models.GrupoAdultoModel).filter(
+        models.GrupoAdultoModel.adulto_id == adulto.id
+    ).first()
+    grupo_legacy = db.query(models.GrupoFamiliarModel).filter(
         models.GrupoFamiliarModel.adulto_id == adulto.id
     ).first()
-    if grupo_existente:
-        return {
-            "grupo_id": grupo_existente.id,
-            "nombre": grupo_existente.nombre,
-            "adulto_id": grupo_existente.adulto_id,
-            "codigo_token": grupo_existente.codigo_token,
-            "mensaje": "El adulto mayor ya tenía un grupo familiar creado"
-        }
+    if ya_en_grupo or grupo_legacy:
+        gid = ya_en_grupo.grupo_id if ya_en_grupo else grupo_legacy.id
+        raise HTTPException(
+            status_code=409,
+            detail=f"{adulto.nombre} ya pertenece al grupo familiar #{gid}. Un adulto mayor no puede estar en más de un grupo."
+        )
 
     token = generar_token_6_digitos(db)
     grupo = models.GrupoFamiliarModel(
@@ -565,6 +886,11 @@ def crear_grupo_familiar(req: schemas.GrupoCrearRequest, db: Session = Depends(g
     db.add(grupo)
     db.commit()
     db.refresh(grupo)
+
+    db.add(models.GrupoAdultoModel(
+        grupo_id=grupo.id,
+        adulto_id=adulto.id
+    ))
 
     if req.familiar_admin_id:
         familiar = db.query(models.UsuarioModel).filter(
@@ -578,25 +904,70 @@ def crear_grupo_familiar(req: schemas.GrupoCrearRequest, db: Session = Depends(g
                 rol_grupo="admin",
                 estado="aprobado"
             ))
-            vinculo = db.query(models.VinculoModel).filter(
-                models.VinculoModel.familiar_id == familiar.id,
-                models.VinculoModel.adulto_id == adulto.id
-            ).first()
-            if not vinculo:
-                db.add(models.VinculoModel(
-                    familiar_id=familiar.id,
-                    adulto_id=adulto.id,
-                    codigo_qr=str(uuid.uuid4())
-                ))
-            db.commit()
+            asegurar_vinculo(db, familiar.id, adulto.id)
+
+    db.commit()
 
     return {
         "grupo_id": grupo.id,
         "nombre": grupo.nombre,
-        "adulto_id": grupo.adulto_id,
+        "adulto_id": adulto.id,
         "codigo_token": grupo.codigo_token,
         "mensaje": "Grupo familiar creado con éxito"
     }
+
+
+@app.post("/grupos/{grupo_id}/adultos/")
+def agregar_adulto_a_grupo(grupo_id: int, req: schemas.GrupoAgregarAdultoRequest, db: Session = Depends(get_db)):
+    grupo = db.query(models.GrupoFamiliarModel).filter(models.GrupoFamiliarModel.id == grupo_id).first()
+    if not grupo:
+        raise HTTPException(status_code=404, detail="Grupo no encontrado")
+
+    admin = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == grupo_id,
+        models.MiembroGrupoModel.familiar_id == req.admin_familiar_id,
+        models.MiembroGrupoModel.rol_grupo == "admin",
+        models.MiembroGrupoModel.estado == "aprobado"
+    ).first()
+    if not admin:
+        raise HTTPException(status_code=403, detail="Solo el familiar administrador aprobado puede agregar adultos mayores al grupo")
+
+    adulto = db.query(models.UsuarioModel).filter(
+        models.UsuarioModel.id == req.adulto_id,
+        models.UsuarioModel.rol == "adulto_mayor"
+    ).first()
+    if not adulto:
+        raise HTTPException(status_code=404, detail="Adulto mayor no encontrado")
+
+    ya_en_grupo = db.query(models.GrupoAdultoModel).filter(
+        models.GrupoAdultoModel.adulto_id == adulto.id
+    ).first()
+    if ya_en_grupo:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{adulto.nombre} ya pertenece al grupo familiar #{ya_en_grupo.grupo_id}. No puede estar en otro grupo."
+        )
+
+    db.add(models.GrupoAdultoModel(
+        grupo_id=grupo.id,
+        adulto_id=adulto.id
+    ))
+
+    miembros_aprobados = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == grupo.id,
+        models.MiembroGrupoModel.estado == "aprobado"
+    ).all()
+    for m in miembros_aprobados:
+        asegurar_vinculo(db, m.familiar_id, adulto.id)
+
+    db.commit()
+    return {
+        "grupo_id": grupo.id,
+        "adulto_id": adulto.id,
+        "adulto_nombre": adulto.nombre,
+        "mensaje": f"{adulto.nombre} agregado al grupo '{grupo.nombre}' y vinculado con sus familiares."
+    }
+
 
 @app.post("/grupos/unirse/")
 def unirse_a_grupo(req: schemas.UnirseGrupoRequest, db: Session = Depends(get_db)):
@@ -646,17 +1017,9 @@ def unirse_a_grupo(req: schemas.UnirseGrupoRequest, db: Session = Depends(get_db
     db.refresh(miembro)
 
     if estado_asignado == "aprobado":
-        vinculo = db.query(models.VinculoModel).filter(
-            models.VinculoModel.familiar_id == familiar.id,
-            models.VinculoModel.adulto_id == grupo.adulto_id
-        ).first()
-        if not vinculo:
-            db.add(models.VinculoModel(
-                familiar_id=familiar.id,
-                adulto_id=grupo.adulto_id,
-                codigo_qr=str(uuid.uuid4())
-            ))
-            db.commit()
+        for a in obtener_adultos_de_grupo(db, grupo):
+            asegurar_vinculo(db, familiar.id, a["adulto_id"])
+        db.commit()
 
     return {
         "miembro_id": miembro.id,
@@ -666,6 +1029,7 @@ def unirse_a_grupo(req: schemas.UnirseGrupoRequest, db: Session = Depends(get_db
         "estado": miembro.estado,
         "mensaje": "Ingresaste como administrador del grupo" if estado_asignado == "aprobado" else "Solicitud enviada. Esperando aprobación del familiar administrador"
     }
+
 
 @app.get("/grupos/{grupo_id}/miembros/")
 def listar_miembros_grupo(grupo_id: int, db: Session = Depends(get_db)):
@@ -688,13 +1052,16 @@ def listar_miembros_grupo(grupo_id: int, db: Session = Depends(get_db)):
             "rol_grupo": m.rol_grupo,
             "estado": m.estado
         })
+
+    adultos = obtener_adultos_de_grupo(db, grupo)
     return {
         "grupo_id": grupo.id,
         "nombre": grupo.nombre,
-        "adulto_id": grupo.adulto_id,
+        "adultos": adultos,
         "codigo_token": grupo.codigo_token,
         "miembros": salida
     }
+
 
 @app.put("/grupos/miembros/{miembro_id}/decidir/")
 def decidir_miembro_grupo(miembro_id: int, req: schemas.DecidirMiembroRequest, db: Session = Depends(get_db)):
@@ -715,16 +1082,8 @@ def decidir_miembro_grupo(miembro_id: int, req: schemas.DecidirMiembroRequest, d
         miembro.estado = "aprobado"
         grupo = db.query(models.GrupoFamiliarModel).filter(models.GrupoFamiliarModel.id == miembro.grupo_id).first()
         if grupo:
-            vinculo = db.query(models.VinculoModel).filter(
-                models.VinculoModel.familiar_id == miembro.familiar_id,
-                models.VinculoModel.adulto_id == grupo.adulto_id
-            ).first()
-            if not vinculo:
-                db.add(models.VinculoModel(
-                    familiar_id=miembro.familiar_id,
-                    adulto_id=grupo.adulto_id,
-                    codigo_qr=str(uuid.uuid4())
-                ))
+            for a in obtener_adultos_de_grupo(db, grupo):
+                asegurar_vinculo(db, miembro.familiar_id, a["adulto_id"])
     else:
         miembro.estado = "rechazado"
 
@@ -734,18 +1093,27 @@ def decidir_miembro_grupo(miembro_id: int, req: schemas.DecidirMiembroRequest, d
         "miembro_id": miembro.id,
         "familiar_id": miembro.familiar_id,
         "estado": miembro.estado,
-        "mensaje": "Miembro aprobado y vinculado al grupo" if req.aprobar else "Solicitud de ingreso rechazada"
+        "mensaje": "Miembro aprobado y vinculado a todos los adultos mayores del grupo" if req.aprobar else "Solicitud de ingreso rechazada"
     }
 
-# Archivos estáticos del Panel y de la App Móvil
+
+# Archivos estáticos del Panel, Login y App Móvil
 BASE_DIR = Path(__file__).parent
+
+
+@app.get("/login", include_in_schema=False)
+def login_page():
+    return FileResponse(BASE_DIR / "login.html")
+
 
 @app.get("/panel", include_in_schema=False)
 def panel():
     return FileResponse(BASE_DIR / "index.html")
 
+
 @app.get("/panel.css", include_in_schema=False)
 def panel_css():
     return FileResponse(BASE_DIR / "panel.css")
+
 
 app.mount("/mobile", StaticFiles(directory=BASE_DIR / "mobile", html=True), name="mobile")

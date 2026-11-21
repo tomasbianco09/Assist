@@ -25,6 +25,7 @@ const $opts = document.getElementById('opts');
 const $hc = document.getElementById('hcSwitch');
 
 let usuario = loadUser();
+let grupoInfo = null;
 let sesiones = [];
 let ubicaciones = [];
 let sesionActivaPrevia = null;
@@ -33,9 +34,9 @@ let busy = false;
 let pausePolling = false;
 let timer = null;
 
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const inicial = nombre => esc(String(nombre).trim().charAt(0).toUpperCase() || '?');
-const primerNombre = nombre => String(nombre).trim().split(/\s+/)[0];
+const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const inicial = nombre => esc(String(nombre || '?').trim().charAt(0).toUpperCase() || '?');
+const primerNombre = nombre => String(nombre || '').trim().split(/\s+/)[0] || 'Usuario';
 
 async function api(path, options) {
   let res;
@@ -50,7 +51,11 @@ async function api(path, options) {
   return data;
 }
 
-const json = body => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const jsonBody = body => ({
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body)
+});
 
 function show(key, html, focusSel) {
   if (!$screen || key === current) return;
@@ -58,14 +63,14 @@ function show(key, html, focusSel) {
   $screen.innerHTML = html;
   const el = $screen.querySelector(focusSel || 'h1');
   if (el) {
-    if (!el.hasAttribute('tabindex') && !el.matches('input,button')) el.tabIndex = -1;
-    el.focus({ preventScroll: false });
+    if (!el.hasAttribute('tabindex') && !el.matches('input,button,select')) el.tabIndex = -1;
+    try { el.focus({ preventScroll: false }); } catch (_) {}
   }
 }
 
 function setBusy(on) {
   busy = on;
-  if ($screen) $screen.querySelectorAll('.btn').forEach(b => b.disabled = on);
+  if ($screen) $screen.querySelectorAll('.btn, .field').forEach(b => { b.disabled = on; });
 }
 
 function showInlineError(msg) {
@@ -96,17 +101,22 @@ function ensureHistorySection() {
 }
 
 function loadUser() {
-  try { return JSON.parse(store('usuario')) || null; } catch (e) { return null; }
+  try {
+    const raw = store('usuario');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
 }
 
 function saveUser(u) {
   usuario = { id: u.id, nombre: u.nombre, email: u.email };
   store('usuario', JSON.stringify(usuario));
   renderAccount();
+  cargarGrupoMovil();
 }
 
 function clearUser() {
   usuario = null;
+  grupoInfo = null;
   sesionActivaPrevia = null;
   store('usuario', null);
   store('adulto', null);
@@ -121,13 +131,24 @@ function renderAccount() {
   if (usuario) {
     const accName = document.getElementById('accName');
     const accEmail = document.getElementById('accEmail');
-    if (accName) accName.textContent = usuario.nombre;
+    if (accName) accName.textContent = usuario.nombre || '';
     if (accEmail) accEmail.textContent = usuario.email || '';
   }
 }
 
+async function cargarGrupoMovil() {
+  if (!usuario || !usuario.id) return;
+  try {
+    grupoInfo = await api(`/usuarios/${usuario.id}/grupo/`);
+    if (current.startsWith('idle')) {
+      current = '';
+      refresh();
+    }
+  } catch (_) {}
+}
+
 async function cargarHistorialMovil() {
-  if (!usuario) return;
+  if (!usuario || !usuario.id) return;
   ensureHistorySection();
   try {
     const lista = await api(`/sesiones/historial/?adulto_id=${usuario.id}`);
@@ -141,13 +162,14 @@ async function cargarHistorialMovil() {
       const dur = s.duracion_segundos != null ? `${s.duracion_segundos} s` : 'en curso';
       return `<li><span class="ic yes" aria-hidden="true">•</span><span><strong>${esc(s.familiar_nombre)}</strong> · ${esc(s.estado)} (${dur})</span></li>`;
     }).join('');
-  } catch (e) {}
+  } catch (_) {}
 }
 
 function startPolling() {
   stopPolling();
   pausePolling = false;
   current = '';
+  cargarGrupoMovil();
   refresh();
   timer = setInterval(refresh, POLL_MS);
 }
@@ -180,7 +202,7 @@ function viewLogin(aviso) {
 
 function guideHtml() {
   const pasos = [
-    ['Tu familiar te pide ayuda', 'Puede pedirte ver tu pantalla o saber dónde estás. Tú también puedes avisarle con el botón “Pedir ayuda a mi familia”.'],
+    ['Tu familiar te pide ayuda', 'Puede pedirte ver tu pantalla o saber dónde estás. Tú también puedes avisarle eligiendo a quién pedir ayuda.'],
     ['Tú decides', 'Te preguntamos antes. Toca Permitir o No permitir. Si no aceptas, no se comparte nada.'],
     ['Paras cuando quieras', 'Mientras compartes, el botón rojo “Dejar de compartir” siempre está a la vista.']
   ];
@@ -188,9 +210,38 @@ function guideHtml() {
     <section class="guide" aria-labelledby="guideTitle">
       <h2 id="guideTitle">Así funciona</h2>
       <ol class="rules guide-steps" role="list">
-        ${pasos.map((p, i) => `<li><span class="ic yes" aria-hidden="true">${i + 1}</span><span class="guide-text"><strong>${p[0]}</strong><span>${p[1]}</span></span></li>`).join('')}
+        ${pasos.map((p, i) => `<li><span class="ic yes" aria-hidden="true">${i + 1}</span><span class="guide-text"><strong>${esc(p[0])}</strong><span>${esc(p[1])}</span></span></li>`).join('')}
       </ol>
     </section>`;
+}
+
+function grupoBannerHtml() {
+  if (!grupoInfo) return '';
+  if (!grupoInfo.tiene_grupo) {
+    return `<p class="note small">Todavía no estás asignado a un grupo familiar.</p>`;
+  }
+  const famTxt = (grupoInfo.familiares_aprobados && grupoInfo.familiares_aprobados.length)
+    ? grupoInfo.familiares_aprobados.join(', ')
+    : 'Sin familiares aprobados aún';
+  return `
+    <div class="rules" style="width:100%;text-align:left;padding:.8rem 1rem;">
+      <p class="small"><strong>Grupo familiar:</strong> ${esc(grupoInfo.nombre)} (#${esc(grupoInfo.grupo_id)})</p>
+      <p class="small"><strong>Familiares:</strong> ${esc(famTxt)}</p>
+    </div>`;
+}
+
+function selectorDestinoHtml() {
+  const familiares = (grupoInfo && Array.isArray(grupoInfo.familiares)) ? grupoInfo.familiares : [];
+  const optsHtml = [
+    '<option value="">Todos los familiares del grupo</option>',
+    ...familiares.map(f => `<option value="${esc(f.familiar_id)}">${esc(f.nombre)}${f.rol_grupo === 'admin' ? ' (Admin)' : ''}</option>`)
+  ].join('');
+
+  return `
+    <div class="form" style="width:100%;text-align:left;">
+      <label for="destinoFamiliarSelect">¿A quién querés pedirle ayuda?</label>
+      <select class="field" id="destinoFamiliarSelect">${optsHtml}</select>
+    </div>`;
 }
 
 function viewIdle(avisoAyuda) {
@@ -200,9 +251,11 @@ function viewIdle(avisoAyuda) {
       <p class="kicker">Hola, ${esc(primerNombre(usuario.nombre))}</p>
       <h1>Tu pantalla es solo tuya</h1>
       <p class="lead">Nadie puede verla ahora. Si un familiar quiere ayudarte, te vamos a preguntar antes.</p>
+      ${grupoBannerHtml()}
       ${avisoAyuda ? `<p class="note" role="status">${esc(avisoAyuda)}</p>` : ''}
       <p class="error" id="err" role="alert" hidden></p>
       <p class="status"><span class="dot" aria-hidden="true"></span> Esperando solicitudes</p>
+      ${selectorDestinoHtml()}
       <div class="actions" style="width:100%">
         <button class="btn primary" id="helpBtn" type="button">🚨 Pedir ayuda a mi familia</button>
       </div>
@@ -343,7 +396,7 @@ async function ingresar(ev) {
   if (!email) { showInlineError('Escribe tu correo electrónico para entrar.'); return; }
   setBusy(true);
   try {
-    const u = await api('/usuarios/ingresar/', json({ email }));
+    const u = await api('/usuarios/ingresar/', jsonBody({ email }));
     if (u.rol !== 'adulto_mayor') {
       throw new Error('Ese correo es de un familiar. Esta app es para el celular de la persona que recibe ayuda.');
     }
@@ -358,11 +411,18 @@ async function ingresar(ev) {
 
 async function pedirAyudaMovil() {
   if (busy || !usuario) return;
+  const sel = document.getElementById('destinoFamiliarSelect');
+  const rawVal = sel ? sel.value : '';
+  const destinoId = rawVal ? parseInt(rawVal, 10) : null;
+
   setBusy(true);
   try {
-    await api('/solicitudes/pedir-ayuda/', json({ usuario_id: usuario.id }));
+    const res = await api('/solicitudes/pedir-ayuda/', jsonBody({
+      usuario_id: usuario.id,
+      destino_familiar_id: destinoId
+    }));
     setBusy(false);
-    viewIdle('¡Avisamos a tu familia! Enseguida se comunicarán contigo.');
+    viewIdle(res.mensaje || '¡Avisamos a tu familia! Enseguida se comunicarán contigo.');
   } catch (e) {
     setBusy(false);
     showInlineError('No pudimos enviar la alerta. ' + e.message);
@@ -458,7 +518,7 @@ async function refresh() {
     let dataUbicaciones = [];
     try {
       dataUbicaciones = await api(`/ubicaciones/pendientes/${usuario.id}`);
-    } catch (e) {}
+    } catch (_) {}
 
     if (!usuario || busy || pausePolling) return;
     sesiones = dataSesiones || [];
@@ -514,24 +574,26 @@ const optsBtn = document.getElementById('optsBtn');
 if (optsBtn && $opts) {
   optsBtn.onclick = () => {
     cargarHistorialMovil();
-    $opts.showModal();
+    try { $opts.showModal(); } catch (_) {}
   };
 }
 
 const optsClose = document.getElementById('optsClose');
-if (optsClose && $opts) optsClose.onclick = () => $opts.close();
+if (optsClose && $opts) optsClose.onclick = () => { try { $opts.close(); } catch (_) {} };
 
 if ($opts) {
   $opts.addEventListener('click', e => {
     if (e.target !== $opts) return;
     const r = $opts.getBoundingClientRect();
-    if (e.clientY < r.top || e.clientY > r.bottom || e.clientX < r.left || e.clientX > r.right) $opts.close();
+    if (e.clientY < r.top || e.clientY > r.bottom || e.clientX < r.left || e.clientX > r.right) {
+      try { $opts.close(); } catch (_) {}
+    }
   });
 }
 
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn && $opts) {
-  logoutBtn.onclick = () => { $opts.close(); viewLogoutConfirm(); };
+  logoutBtn.onclick = () => { try { $opts.close(); } catch (_) {} viewLogoutConfirm(); };
 }
 
 if (params.get('demo')) {
@@ -543,7 +605,7 @@ if (params.get('demo')) {
       const msg = document.getElementById('demoMsg');
       try {
         const vinculo_id = parseInt(document.getElementById('demoVinculo').value, 10);
-        const r = await api('/sesiones/solicitar/', json({ vinculo_id }));
+        const r = await api('/sesiones/solicitar/', jsonBody({ vinculo_id }));
         if (msg) msg.textContent = 'Solicitud #' + r.sesion_id + ' enviada.';
         refresh();
       } catch (e) {
@@ -561,10 +623,10 @@ async function init() {
     history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + location.hash);
     try {
       const u = await api(`/usuarios/${parseInt(adultoParam, 10)}`);
-      if (u.rol === 'adulto_mayor') saveUser(u);
-    } catch (e) {}
+      if (u && u.rol === 'adulto_mayor') saveUser(u);
+    } catch (_) {}
   }
-  if (usuario) startPolling();
+  if (usuario && usuario.id) startPolling();
   else viewLogin();
 }
 

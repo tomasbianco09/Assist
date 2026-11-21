@@ -13,13 +13,24 @@
             var alto = pref ? pref === 'alto' : matchMedia('(prefers-contrast: more)').matches;
             document.documentElement.dataset.contrast = alto ? 'high' : 'normal';
         })();
+        (function () {
+            try {
+                var raw = localStorage.getItem('assist_sesion_familiar');
+                var u = raw ? JSON.parse(raw) : null;
+                if (!u || !u.id || u.rol !== 'familiar') {
+                    window.location.replace('/login');
+                }
+            } catch (e) {
+                window.location.replace('/login');
+            }
+        })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="panel.css">
+    <link rel="stylesheet" href="panel.css?v=3">
 </head>
 
 <body>
@@ -36,6 +47,8 @@
             <div class="top-actions">
                 <span class="api-state" id="apiState"><span class="dot" aria-hidden="true"></span><span
                         id="apiText">Buscando la API…</span></span>
+                <span class="pill" id="sesionUsuarioBadge">Verificando sesión…</span>
+                <button class="chip" id="btnCerrarSesion" type="button">Cerrar sesión</button>
                 <button class="chip" id="hcSwitch" type="button" role="switch" aria-checked="false">
                     <span class="track" aria-hidden="true"><span class="knob"></span></span>
                     Alto contraste
@@ -60,32 +73,56 @@
                 <span class="push-badge">SOS · Alerta en tiempo real</span>
                 <p id="pushText">Un adulto mayor solicitó asistencia.</p>
             </div>
-            <button class="btn primary" type="button" id="atenderPushBtn">Marcar como atendida</button>
+            <div style="display:flex;gap:0.45rem;flex-wrap:wrap;align-items:center;">
+                <button class="btn primary" type="button" id="bannerIrPantallaBtn">Ver pantalla</button>
+                <button class="btn ghost" type="button" id="bannerIrUbiBtn">Pedir ubicación</button>
+                <button class="btn" type="button" id="atenderPushBtn">Marcar como atendida</button>
+            </div>
         </section>
+
+        <!-- Aviso flotante cuando el usuario hizo scroll abajo y llega una alerta SOS -->
+        <div class="push-banner" id="pushToast" hidden role="status" aria-live="polite"
+            style="position:fixed;right:1rem;bottom:1rem;left:auto;max-width:440px;z-index:900;box-shadow:0 10px 28px rgba(0,0,0,.18);">
+            <div class="push-content">
+                <span class="push-badge">SOS · Nueva alerta</span>
+                <p id="pushToastText">Un adulto mayor pidió ayuda.</p>
+            </div>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.5rem;">
+                <button class="btn primary" type="button" style="padding:0.4rem 0.7rem;font-size:0.85rem;"
+                    id="toastIrPantallaBtn">Ver pantalla</button>
+                <button class="btn ghost" type="button" style="padding:0.4rem 0.7rem;font-size:0.85rem;"
+                    id="toastIrUbiBtn">Pedir ubicación</button>
+                <button class="btn" type="button" style="padding:0.4rem 0.7rem;font-size:0.85rem;"
+                    id="toastAtenderBtn">Atendida</button>
+            </div>
+        </div>
 
         <section class="intro">
             <p class="kicker">Panel de control · Sprint 2</p>
             <h1>Centro de asistencia para el familiar</h1>
-            <p class="lead">Desde aquí configuras el vínculo familiar y realizas las acciones de asistencia remota. Para
-                probar la experiencia completa, abre la <strong>app del celular</strong> en otra pestaña.</p>
+            <p class="lead">Desde aquí gestionas tu grupo familiar, vinculás dispositivos y realizas las acciones de
+                asistencia remota. Para probar la experiencia completa, abre la <strong>app del celular</strong> en otra
+                pestaña.</p>
+            <div id="bannerMiGrupoDesktop" class="pill" hidden
+                style="margin-top:0.75rem;display:inline-flex;flex-wrap:wrap;gap:0.5rem;align-items:center;"></div>
 
             <!-- Guía rápida de uso paso a paso -->
             <div class="QuickGuide" aria-label="Guía rápida de cómo funciona Assist">
                 <div class="guide-step">
                     <span class="guide-num">Paso A</span>
-                    <strong>Registra y vincula (Pasos 01 y 02)</strong>
-                    <p>Crea un usuario <em>Familiar</em> y un <em>Adulto mayor</em> (o usa IDs existentes) y genera su
-                        código QR para obtener el <strong>ID del vínculo</strong>.</p>
+                    <strong>Registra y arma el grupo</strong>
+                    <p>Crea usuarios y configurá el <strong>grupo familiar</strong> (token de 6 dígitos y adultos
+                        mayores) antes de generar vínculos.</p>
                 </div>
                 <div class="guide-step">
                     <span class="guide-num">Paso B</span>
-                    <strong>Abre el celular del adulto mayor</strong>
-                    <p>Haz clic arriba en <strong>“Abrir app del celular”</strong> e ingresa con el correo del adulto
-                        mayor para recibir los pedidos en vivo.</p>
+                    <strong>Vincula del mismo grupo</strong>
+                    <p>Generá el código QR solo entre un familiar aprobado y un adulto mayor que pertenezcan al
+                        <strong>mismo grupo familiar</strong>.</p>
                 </div>
                 <div class="guide-step">
                     <span class="guide-num">Paso C</span>
-                    <strong>Asiste con permiso (Pasos 03 al 06)</strong>
+                    <strong>Asiste con permiso</strong>
                     <p>Pide ver la pantalla o la ubicación desde este panel, acepta desde el celular y revisa el
                         historial de auditoría.</p>
                 </div>
@@ -100,8 +137,8 @@
                 <!-- FASE 1: CONFIGURACIÓN INICIAL                           -->
                 <!-- ======================================================= -->
                 <div class="phase-header">
-                    <span class="phase-tag">Fase 1 · Configuración única</span>
-                    <p>Registra a las personas y vincula sus dispositivos mediante código QR.</p>
+                    <span class="phase-tag">Fase 1 · Personas, grupo familiar y vínculo</span>
+                    <p>Primero registrá personas y gestioná el grupo familiar; luego generá el vínculo QR.</p>
                 </div>
 
                 <!-- 01 · Registrar -->
@@ -110,8 +147,8 @@
                         <span class="num" aria-hidden="true">01</span>
                         <div>
                             <h2>Registrar a una persona</h2>
-                            <p>Crea primero un <strong>Familiar</strong> y luego un <strong>Adulto mayor</strong>. Sus
-                                IDs se cargarán solos en el paso 02.</p>
+                            <p>Crea un <strong>Familiar</strong> o un <strong>Adulto mayor</strong>. Sus IDs se cargarán
+                                solos en los formularios siguientes.</p>
                         </div>
                     </header>
                     <div class="grid-3">
@@ -141,58 +178,29 @@
                     </div>
                 </form>
 
-                <!-- 02 · Vincular -->
-                <form class="card" id="formVinculo" novalidate>
-                    <header class="card-head">
-                        <span class="num" aria-hidden="true">02</span>
-                        <div>
-                            <h2>Vincular los celulares <small>HU-01</small></h2>
-                            <p>Une al familiar con el adulto mayor mediante un código QR y habilita el ID del vínculo
-                                para las asistencias.</p>
-                        </div>
-                    </header>
-                    <div class="grid-2">
-                        <div class="field-wrap">
-                            <label for="famId">ID del familiar <span class="label-hint" id="famHint"></span></label>
-                            <input class="field" type="number" id="famId" value="1" min="1">
-                        </div>
-                        <div class="field-wrap">
-                            <label for="adId">ID del adulto mayor <span class="label-hint" id="adHint"></span></label>
-                            <input class="field" type="number" id="adId" value="2" min="1">
-                        </div>
-                    </div>
-                    <button class="btn primary" type="submit">Generar código QR y activar vínculo</button>
-                    <figure class="qr" id="qrContainer" hidden>
-                        <img id="qrImage" src="" alt="Código QR de vinculación">
-                        <figcaption>
-                            <strong>¡Vínculo #<span id="qrVinculoId"></span> activo!</strong> Ya se copió
-                            automáticamente en los pasos 03 y 04.<br>
-                            <span>Token QR: <code id="qrToken"></code></span>
-                        </figcaption>
-                    </figure>
-                </form>
-
-                <!-- GRUPO FAMILIAR: Token de 6 dígitos y aprobación por familiar admin -->
+                <!-- 02 · Grupo Familiar (antes de Vincular) -->
                 <section class="card" id="cardGrupoFamiliar" aria-label="Grupo familiar y token de 6 dígitos">
                     <div class="card-head">
-                        <div>
+                        <span class="num" aria-hidden="true">02</span>
+                        <div style="flex:1;">
                             <span class="step-tag">Grupo · Acceso</span>
                             <h2>Grupo familiar y token de 6 dígitos</h2>
                         </div>
                         <span class="pill" id="grupoActivoPill">Sin grupo cargado</span>
                     </div>
                     <p class="card-desc">
-                        Creá el grupo de un adulto mayor para obtener su <strong>token de 6 dígitos</strong>, sumá
-                        familiares con ese código y aprobá solicitudes pendientes desde el familiar administrador.
+                        Creá el grupo familiar con un <strong>token de 6 dígitos</strong>, sumá más adultos mayores al
+                        mismo grupo (cada adulto pertenece a un único grupo) y aprobá solicitudes de familiares desde el
+                        administrador.
                     </p>
 
                     <div class="grid-2"
                         style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;">
-                        <!-- Crear grupo y obtener token de 6 dígitos -->
+                        <!-- 1. Crear grupo -->
                         <form id="formCrearGrupo" class="sub-box">
-                            <h3>1. Crear grupo del adulto mayor</h3>
+                            <h3>1. Crear grupo familiar</h3>
                             <div class="field-wrap">
-                                <label for="grupoAdultoId">ID Adulto mayor</label>
+                                <label for="grupoAdultoId">ID Adulto mayor inicial</label>
                                 <input class="field" id="grupoAdultoId" type="number" min="1" placeholder="Ej: 1"
                                     required />
                             </div>
@@ -208,9 +216,9 @@
                             <div class="result-box" id="resCrearGrupo" hidden></div>
                         </form>
 
-                        <!-- Unirse con token de 6 dígitos -->
+                        <!-- 2. Unirse con token de 6 dígitos -->
                         <form id="formUnirseGrupo" class="sub-box">
-                            <h3>2. Unirse con token de 6 dígitos</h3>
+                            <h3>2. Unirse como familiar (token 6 dígitos)</h3>
                             <div class="field-wrap">
                                 <label for="unirseFamiliarId">ID Familiar que se une</label>
                                 <input class="field" id="unirseFamiliarId" type="number" min="1" placeholder="Ej: 3"
@@ -226,7 +234,27 @@
                         </form>
                     </div>
 
-                    <!-- Ver miembros y aprobar/rechazar como familiar administrador -->
+                    <!-- 3. Agregar otro adulto mayor al grupo existente (solo admin) -->
+                    <form id="formAgregarAdultoGrupo" class="sub-box"
+                        style="margin-top:1.15rem;padding-top:1rem;border-top:1px solid var(--line, #e2d9c8);">
+                        <h3>3. Agregar otro adulto mayor a este grupo (solo admin)</h3>
+                        <div class="row-inline" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+                            <div class="field-wrap" style="min-width:120px;margin:0;">
+                                <label for="agregarAdultoGrupoId">ID Grupo</label>
+                                <input class="field" id="agregarAdultoGrupoId" type="number" min="1" placeholder="Ej: 1"
+                                    required />
+                            </div>
+                            <div class="field-wrap" style="min-width:160px;margin:0;">
+                                <label for="agregarAdultoId">ID Nuevo adulto mayor</label>
+                                <input class="field" id="agregarAdultoId" type="number" min="1" placeholder="Ej: 4"
+                                    required />
+                            </div>
+                            <button class="btn primary" type="submit">Agregar adulto mayor al grupo</button>
+                        </div>
+                        <div class="result-box" id="resAgregarAdultoGrupo" hidden style="margin-top:0.5rem;"></div>
+                    </form>
+
+                    <!-- 4. Ver adultos mayores y familiares del grupo -->
                     <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--line, #e2d9c8);">
                         <div class="row-inline" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
                             <div class="field-wrap" style="min-width:120px;margin:0;">
@@ -234,14 +262,15 @@
                                 <input class="field" id="gestionGrupoId" type="number" min="1" placeholder="Ej: 1" />
                             </div>
                             <div class="field-wrap" style="min-width:160px;margin:0;">
-                                <label for="gestionAdminId">ID Familiar admin</label>
-                                <input class="field" id="gestionAdminId" type="number" min="1" placeholder="Ej: 2" />
+                                <label for="gestionAdminId">ID Familiar admin (sesión)</label>
+                                <input class="field" id="gestionAdminId" type="number" min="1" readonly />
                             </div>
-                            <button class="btn ghost" type="button" id="btnCargarMiembros">Ver miembros del
+                            <button class="btn ghost" type="button" id="btnCargarMiembros">Ver integrantes del
                                 grupo</button>
                         </div>
 
                         <div id="infoTokenGrupo" style="margin-top:0.75rem;" hidden></div>
+                        <div id="listaAdultosGrupo" style="margin-top:0.5rem;" hidden></div>
 
                         <div style="margin-top:0.75rem;overflow:auto;">
                             <table class="hist-table" id="tablaMiembrosGrupo">
@@ -257,7 +286,7 @@
                                 </thead>
                                 <tbody id="tbodyMiembrosGrupo">
                                     <tr>
-                                        <td colspan="6">Indicá un ID de grupo y tocá <strong>Ver miembros del
+                                        <td colspan="6">Indicá un ID de grupo y tocá <strong>Ver integrantes del
                                                 grupo</strong>.</td>
                                     </tr>
                                 </tbody>
@@ -266,20 +295,54 @@
                     </div>
                 </section>
 
+                <!-- 03 · Vincular (después del Grupo Familiar) -->
+                <form class="card" id="formVinculo" novalidate>
+                    <header class="card-head">
+                        <span class="num" aria-hidden="true">03</span>
+                        <div>
+                            <h2>Vincular los celulares <small>HU-01</small></h2>
+                            <p>Generá el código QR solo entre tu cuenta de familiar y un adulto mayor que pertenezca a
+                                <strong>tu mismo grupo familiar</strong>.</p>
+                        </div>
+                    </header>
+                    <div class="grid-2">
+                        <div class="field-wrap">
+                            <label for="famId">ID del familiar (sesión) <span class="label-hint" id="famHint"></span></label>
+                            <input class="field" type="number" id="famId" value="1" min="1" readonly>
+                        </div>
+                        <div class="field-wrap">
+                            <label for="adId">ID del adulto mayor <span class="label-hint" id="adHint"></span></label>
+                            <input class="field" type="number" id="adId" value="2" min="1">
+                        </div>
+                    </div>
+                    <button class="btn primary" type="submit">Generar código QR y activar vínculo</button>
+                    <p class="helper-pill" id="alertaVinculoGrupo" hidden
+                        style="margin-top:0.65rem;color:#b42318;"></p>
+                    <figure class="qr" id="qrContainer" hidden>
+                        <img id="qrImage" src="" alt="Código QR de vinculación">
+                        <figcaption>
+                            <strong>¡Vínculo #<span id="qrVinculoId"></span> activo!</strong> Ya se copió
+                            automáticamente en los pasos de asistencia.<br>
+                            <span>Token QR: <code id="qrToken"></code></span>
+                        </figcaption>
+                    </figure>
+                </form>
+
                 <!-- ======================================================= -->
                 <!-- FASE 2: CENTRO DE ASISTENCIA DIARIA                     -->
                 <!-- ======================================================= -->
                 <div class="phase-header">
                     <span class="phase-tag">Fase 2 · Asistencia y monitoreo en vivo</span>
-                    <p>Acciones cotidianas entre el familiar y el adulto mayor.</p>
+                    <p>Acciones cotidianas entre el familiar y el adulto mayor (requiere pertenecer al mismo grupo
+                        familiar).</p>
                 </div>
 
                 <!-- Acciones rápidas de visualización y ubicación en 2 columnas -->
                 <div class="assist-grid">
-                    <!-- 03 · Ver pantalla -->
+                    <!-- 04 · Ver pantalla -->
                     <form class="card" id="formSesion" novalidate>
                         <header class="card-head">
-                            <span class="num" aria-hidden="true">03</span>
+                            <span class="num" aria-hidden="true">04</span>
                             <div>
                                 <h2>Ver la pantalla <small>HU-03</small></h2>
                                 <p>Pide permiso para mirar la pantalla del celular del adulto mayor.</p>
@@ -304,10 +367,10 @@
                         </div>
                     </form>
 
-                    <!-- 04 · Geolocalización bajo Demanda -->
+                    <!-- 05 · Geolocalización bajo Demanda -->
                     <form class="card" id="formUbicacion" novalidate>
                         <header class="card-head">
-                            <span class="num" aria-hidden="true">04</span>
+                            <span class="num" aria-hidden="true">05</span>
                             <div>
                                 <h2>Pedir ubicación <small>HU-06 · SCRUM-35</small></h2>
                                 <p>Consulta dónde está el adulto mayor para saber que se encuentra a salvo.</p>
@@ -337,10 +400,10 @@
                     </form>
                 </div>
 
-                <!-- 05 · Ayuda SOS -->
+                <!-- 06 · Ayuda SOS -->
                 <form class="card" id="formAyuda" novalidate>
                     <header class="card-head">
-                        <span class="num" aria-hidden="true">05</span>
+                        <span class="num" aria-hidden="true">06</span>
                         <div>
                             <h2>Simular botón de emergencia SOS <small>HU-02 · SCRUM-49</small></h2>
                             <p>Simula que el adulto mayor tocó <strong>“🚨 Pedir ayuda a mi familia”</strong> en su
@@ -356,10 +419,10 @@
                     </div>
                 </form>
 
-                <!-- 06 · Historial y Auditoría -->
+                <!-- 07 · Historial y Auditoría -->
                 <section class="card" id="cardHistorial">
                     <header class="card-head">
-                        <span class="num" aria-hidden="true">06</span>
+                        <span class="num" aria-hidden="true">07</span>
                         <div class="card-head-flex">
                             <div>
                                 <h2>Historial y auditoría de sesiones <small>HU-04 · HU-08</small></h2>
@@ -413,8 +476,17 @@
         const API_URL = window.location.protocol.startsWith('http')
             ? window.location.origin
             : 'http://localhost:8000';
+        const CLAVE_SESION_FAM = 'assist_sesion_familiar';
         const $log = document.getElementById('resultado');
         const $ = id => document.getElementById(id);
+
+        let sesionFamiliar = null;
+        try {
+            const raw = localStorage.getItem(CLAVE_SESION_FAM);
+            sesionFamiliar = raw ? JSON.parse(raw) : null;
+        } catch (_) {
+            sesionFamiliar = null;
+        }
 
         function registrar(titulo, data, tipo) {
             const empty = $log.querySelector('.log-empty');
@@ -445,10 +517,13 @@
                 const response = await fetch(API_URL + path, options);
                 const data = await response.json().catch(() => ({}));
                 registrar(titulo, data, response.ok ? 'ok' : 'warn');
-                return response.ok ? data : null;
+                if (!response.ok) {
+                    return { __error: true, status: response.status, detail: data.detail || 'Error en la solicitud' };
+                }
+                return data;
             } catch (error) {
                 registrar(titulo, 'No hay conexión con la API. ¿Está corriendo uvicorn en ' + API_URL + '?', 'err');
-                return null;
+                return { __error: true, detail: 'No hay conexión con la API.' };
             } finally {
                 if (boton) boton.disabled = false;
             }
@@ -456,6 +531,74 @@
         const post = body => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const put = body => ({ method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const submitBtn = form => form.querySelector('button[type="submit"]');
+
+        // ==========================================
+        // Sesión del Familiar en el Panel
+        // ==========================================
+        function aplicarSesionFamiliar() {
+            if (sesionFamiliar && sesionFamiliar.id) {
+                if ($('sesionUsuarioBadge')) {
+                    $('sesionUsuarioBadge').textContent = `${sesionFamiliar.nombre} (#${sesionFamiliar.id})`;
+                }
+                if ($('famId')) {
+                    $('famId').value = sesionFamiliar.id;
+                    $('famId').readOnly = true;
+                }
+                if ($('grupoAdminId')) $('grupoAdminId').value = sesionFamiliar.id;
+                if ($('unirseFamiliarId')) $('unirseFamiliarId').value = sesionFamiliar.id;
+                if ($('gestionAdminId')) {
+                    $('gestionAdminId').value = sesionFamiliar.id;
+                    $('gestionAdminId').readOnly = true;
+                }
+                cargarMiGrupoDesktop();
+            }
+        }
+
+        async function cargarMiGrupoDesktop() {
+            const banner = $('bannerMiGrupoDesktop');
+            if (!banner || !sesionFamiliar || !sesionFamiliar.id) return;
+
+            try {
+                const r = await fetch(`${API_URL}/usuarios/${sesionFamiliar.id}/grupo/`);
+                if (!r.ok) return;
+                const data = await r.json();
+
+                if (!data.tiene_grupo) {
+                    banner.hidden = false;
+                    if (data.estado_solicitud === 'rechazado') {
+                        banner.innerHTML = '<span>⛔ Tu solicitud al grupo fue rechazada; no pertenecés al grupo familiar.</span>';
+                    } else {
+                        banner.innerHTML = '<span>👥 Todavía no pertenecés a ningún grupo familiar.</span>';
+                    }
+                    return;
+                }
+
+                const rolTxt = data.rol_en_grupo === 'admin' ? '👑 Administrador' : 'Miembro';
+                const estadoTxt = data.estado_en_grupo === 'aprobado' ? 'Activo' : `Estado: ${data.estado_en_grupo}`;
+                const nombresAdultos = (data.adultos && data.adultos.length > 0)
+                    ? data.adultos.map(a => `${a.adulto_nombre} (#${a.adulto_id})`).join(', ')
+                    : data.adulto_nombre;
+
+                banner.hidden = false;
+                banner.innerHTML = `
+                    <span>👥 Grupo: <strong>${data.nombre}</strong> (#${data.grupo_id})</span>
+                    <span>· Adultos mayores: <strong>${nombresAdultos}</strong></span>
+                    <span>· Tu rol: <strong>${rolTxt}</strong> (${estadoTxt})</span>
+                    <span>· Token: <code>${data.codigo_token}</code></span>
+                `;
+
+                if ($('gestionGrupoId') && !$('gestionGrupoId').value) {
+                    $('gestionGrupoId').value = data.grupo_id;
+                    $('agregarAdultoGrupoId').value = data.grupo_id;
+                    cargarMiembrosGrupo();
+                }
+            } catch (_) { }
+        }
+
+        $('btnCerrarSesion').onclick = () => {
+            try { localStorage.removeItem(CLAVE_SESION_FAM); } catch (_) { }
+            window.location.href = '/login';
+        };
 
         async function actualizarNombresIds() {
             const fId = parseInt($('famId').value, 10);
@@ -493,18 +636,17 @@
                 return;
             }
             const data = await llamar('Registrar', '/usuarios/', post({ nombre, email, rol }), submitBtn(ev.target));
-            if (data) {
+            if (data && !data.__error) {
                 $('nuevoNombre').value = '';
                 $('nuevoEmail').value = '';
                 const pill = $('ultimoUsuarioCreado');
                 pill.hidden = false;
                 pill.textContent = `✓ ${data.nombre} guardado con ID #${data.id} (${data.rol})`;
-                if (data.rol === 'familiar') {
-                    $('famId').value = data.id;
-                } else {
+                if (data.rol !== 'familiar') {
                     $('adId').value = data.id;
                     $('adultoId').value = data.id;
                     $('grupoAdultoId').value = data.id;
+                    $('agregarAdultoId').value = data.id;
                 }
                 actualizarNombresIds();
             }
@@ -512,8 +654,46 @@
 
         $('formVinculo').onsubmit = async ev => {
             ev.preventDefault();
-            const body = { familiar_id: parseInt($('famId').value, 10), adulto_id: parseInt($('adId').value, 10) };
+            const alertaBox = $('alertaVinculoGrupo');
+            if (alertaBox) {
+                alertaBox.hidden = true;
+                alertaBox.textContent = '';
+            }
+
+            if (!sesionFamiliar || sesionFamiliar.rol !== 'familiar') {
+                alert('Iniciá sesión como familiar antes de crear un vínculo.');
+                return;
+            }
+
+            const solicitanteId = parseInt(sesionFamiliar.id, 10);
+            const famIdVal = parseInt($('famId').value, 10);
+            if (famIdVal !== solicitanteId) {
+                const msg = 'No podés crear un vínculo usando el ID de otro familiar.';
+                if (alertaBox) {
+                    alertaBox.hidden = false;
+                    alertaBox.textContent = `⚠️ ${msg}`;
+                }
+                alert(msg);
+                return;
+            }
+
+            const body = {
+                familiar_id: famIdVal,
+                adulto_id: parseInt($('adId').value, 10),
+                solicitante_familiar_id: solicitanteId
+            };
             const data = await llamar('Vincular', '/vinculos/generar-qr/', post(body), submitBtn(ev.target));
+
+            if (data && data.__error) {
+                $('qrContainer').hidden = true;
+                if (alertaBox) {
+                    alertaBox.hidden = false;
+                    alertaBox.textContent = `⚠️ ${data.detail}`;
+                }
+                alert(data.detail);
+                return;
+            }
+
             if (data && data.qr_imagen_base64) {
                 $('qrImage').src = `data:image/png;base64,${data.qr_imagen_base64}`;
                 $('qrToken').textContent = data.codigo_token;
@@ -526,8 +706,44 @@
             }
         };
 
+        // ==========================================
+        // Alertas SOS + Aceptar y Vincular + Toast al Scrollear
+        // ==========================================
         let alertaActualId = null;
+        let alertaActualAdultoId = null;
         let ultimaAlertaNotificada = null;
+
+        async function aceptarAlertaYRedirigir(accion) {
+            if (!alertaActualId || !sesionFamiliar || !sesionFamiliar.id) return;
+            const data = await llamar(
+                'Vincular y atender alerta',
+                `/solicitudes/${alertaActualId}/aceptar-y-vincular/`,
+                post({ familiar_id: parseInt(sesionFamiliar.id, 10), accion }),
+                null
+            );
+            if (!data || data.__error) {
+                if (data && data.__error) alert(data.detail);
+                return;
+            }
+            if (data.vinculo_id) {
+                $('vinculoId').value = data.vinculo_id;
+                $('vinculoGeoId').value = data.vinculo_id;
+            }
+            $('pushBanner').hidden = true;
+            $('pushToast').hidden = true;
+            alertaActualId = null;
+            verificarAlertasPush();
+
+            if (accion === 'ubicacion') {
+                const sec = $('formUbicacion');
+                sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                $('pedirGeoBtn').focus();
+            } else {
+                const sec = $('formSesion');
+                sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                $('pedirSesionBtn').focus();
+            }
+        }
 
         $('formAyuda').onsubmit = async ev => {
             ev.preventDefault();
@@ -535,16 +751,34 @@
             verificarAlertasPush();
         };
 
+        function actualizarVisibilidadToast() {
+            const toast = $('pushToast');
+            if (!toast) return;
+            if (!alertaActualId) {
+                toast.hidden = true;
+                return;
+            }
+            const bannerVisibleArriba = !$('pushBanner').hidden && window.scrollY < 160;
+            toast.hidden = bannerVisibleArriba;
+        }
+
         async function verificarAlertasPush() {
             try {
-                const r = await fetch(`${API_URL}/solicitudes/pendientes/`);
+                const famParam = (sesionFamiliar && sesionFamiliar.id) ? `?familiar_id=${sesionFamiliar.id}` : '';
+                const r = await fetch(`${API_URL}/solicitudes/pendientes/${famParam}`);
                 if (!r.ok) return;
                 const lista = await r.json();
                 if (lista.length > 0) {
                     const alerta = lista[0];
                     alertaActualId = alerta.solicitud_id;
-                    $('pushText').textContent = `¡${alerta.adulto_nombre} presionó el botón de pedir ayuda! (Solicitud #${alerta.solicitud_id})`;
+                    alertaActualAdultoId = alerta.usuario_id;
+                    const destTxt = alerta.destino_nombre ? ` · Para: ${alerta.destino_nombre}` : '';
+                    const msg = `¡${alerta.adulto_nombre} presionó el botón de pedir ayuda! (Solicitud #${alerta.solicitud_id}${destTxt})`;
+                    $('pushText').textContent = msg;
+                    $('pushToastText').textContent = `${alerta.adulto_nombre} pidió ayuda (#${alerta.solicitud_id}${destTxt})`;
                     $('pushBanner').hidden = false;
+                    actualizarVisibilidadToast();
+
                     if (ultimaAlertaNotificada !== alerta.solicitud_id) {
                         ultimaAlertaNotificada = alerta.solicitud_id;
                         registrar('🔔 Push SOS', alerta, 'warn');
@@ -554,7 +788,9 @@
                     }
                 } else {
                     $('pushBanner').hidden = true;
+                    $('pushToast').hidden = true;
                     alertaActualId = null;
+                    alertaActualAdultoId = null;
                 }
             } catch (e) { }
         }
@@ -562,8 +798,14 @@
         $('atenderPushBtn').onclick = async () => {
             if (!alertaActualId) return;
             const data = await llamar('Atender alerta', `/solicitudes/${alertaActualId}/atender/`, { method: 'PUT' }, $('atenderPushBtn'));
-            if (data) verificarAlertasPush();
+            if (data && !data.__error) verificarAlertasPush();
         };
+        $('bannerIrPantallaBtn').onclick = () => aceptarAlertaYRedirigir('pantalla');
+        $('bannerIrUbiBtn').onclick = () => aceptarAlertaYRedirigir('ubicacion');
+        $('toastAtenderBtn').onclick = () => $('atenderPushBtn').click();
+        $('toastIrPantallaBtn').onclick = () => aceptarAlertaYRedirigir('pantalla');
+        $('toastIrUbiBtn').onclick = () => aceptarAlertaYRedirigir('ubicacion');
+        window.addEventListener('scroll', actualizarVisibilidadToast, { passive: true });
 
         setInterval(verificarAlertasPush, 3000);
         verificarAlertasPush();
@@ -608,8 +850,17 @@
 
         $('formSesion').onsubmit = async ev => {
             ev.preventDefault();
-            const data = await llamar('Pedir ver pantalla', '/sesiones/solicitar/', post({ vinculo_id: parseInt($('vinculoId').value, 10) }), submitBtn(ev.target));
-            if (!data) return;
+            const solicitanteId = sesionFamiliar && sesionFamiliar.id ? parseInt(sesionFamiliar.id, 10) : null;
+            const data = await llamar(
+                'Pedir ver pantalla',
+                '/sesiones/solicitar/',
+                post({ vinculo_id: parseInt($('vinculoId').value, 10), solicitante_familiar_id: solicitanteId }),
+                submitBtn(ev.target)
+            );
+            if (!data || data.__error) {
+                if (data && data.__error) alert(data.detail);
+                return;
+            }
             sesionId = data.sesion_id;
             ultimoEstado = data.estado;
             pintarSesion(data.estado);
@@ -620,7 +871,7 @@
 
         $('terminarBtn').onclick = async () => {
             const data = await llamar('Terminar sesión', `/sesiones/${sesionId}/finalizar/?autor=familiar`, { method: 'PUT' }, $('terminarBtn'));
-            if (data) {
+            if (data && !data.__error) {
                 ultimoEstado = data.estado;
                 pintarSesion(data.estado);
             }
@@ -698,8 +949,17 @@
 
         $('formUbicacion').onsubmit = async ev => {
             ev.preventDefault();
-            const data = await llamar('Solicitar ubicación', '/ubicaciones/solicitar/', post({ vinculo_id: parseInt($('vinculoGeoId').value, 10) }), submitBtn(ev.target));
-            if (!data) return;
+            const solicitanteId = sesionFamiliar && sesionFamiliar.id ? parseInt(sesionFamiliar.id, 10) : null;
+            const data = await llamar(
+                'Solicitar ubicación',
+                '/ubicaciones/solicitar/',
+                post({ vinculo_id: parseInt($('vinculoGeoId').value, 10), solicitante_familiar_id: solicitanteId }),
+                submitBtn(ev.target)
+            );
+            if (!data || data.__error) {
+                if (data && data.__error) alert(data.detail);
+                return;
+            }
             geoId = data.ubicacion_id;
             ultimoGeoEstado = data.estado;
             pintarGeo(data);
@@ -710,7 +970,7 @@
         $('terminarGeoBtn').onclick = async () => {
             if (!geoId) return;
             const data = await llamar('Terminar ubicación', `/ubicaciones/${geoId}/finalizar/`, { method: 'PUT' }, $('terminarGeoBtn'));
-            if (data) {
+            if (data && !data.__error) {
                 ultimoGeoEstado = data.estado;
                 pintarGeo(data);
             }
@@ -754,6 +1014,7 @@
         }
 
         $('refreshHistorialBtn').onclick = cargarHistorial;
+        aplicarSesionFamiliar();
         cargarHistorial();
         actualizarNombresIds();
         setInterval(cargarHistorial, 5000);
@@ -779,15 +1040,17 @@
         };
 
         // ==========================================
-        // Grupo Familiar: Token 6 dígitos + Admin
+        // Grupo Familiar: Multi-adulto + Token 6 dígitos + Admin
         // ==========================================
         function renderInfoGrupo(data) {
             const box = $('infoTokenGrupo');
+            const adultosBox = $('listaAdultosGrupo');
             const pill = $('grupoActivoPill');
             if (!box || !data) return;
 
             if (data.grupo_id) {
                 $('gestionGrupoId').value = data.grupo_id;
+                $('agregarAdultoGrupoId').value = data.grupo_id;
             }
             if (pill && data.codigo_token) {
                 pill.textContent = `Token: ${data.codigo_token}`;
@@ -801,6 +1064,14 @@
                     <button class="link-btn" type="button" id="btnCopiarTokenGrupo">Copiar token</button>
                 </div>
             `;
+
+            if (adultosBox && Array.isArray(data.adultos)) {
+                adultosBox.hidden = false;
+                const listado = data.adultos.length > 0
+                    ? data.adultos.map(a => `<strong>${a.adulto_nombre}</strong> (ID #${a.adulto_id})`).join(', ')
+                    : 'Sin adultos mayores asignados';
+                adultosBox.innerHTML = `<p style="margin:0.35rem 0;font-size:0.95rem;">🧓 Adultos mayores en el grupo: ${listado}</p>`;
+            }
 
             const btnCopy = $('btnCopiarTokenGrupo');
             if (btnCopy) {
@@ -816,12 +1087,16 @@
 
         async function cargarMiembrosGrupo() {
             const grupoId = parseInt($('gestionGrupoId').value, 10);
-            const adminId = parseInt($('gestionAdminId').value, 10);
             const tbody = $('tbodyMiembrosGrupo');
             if (!grupoId) {
                 tbody.innerHTML = '<tr><td colspan="6">Ingresá un ID de grupo válido.</td></tr>';
                 return;
             }
+
+            aplicarSesionFamiliar();
+            const adminIdActual = (sesionFamiliar && sesionFamiliar.rol === 'familiar')
+                ? parseInt(sesionFamiliar.id, 10)
+                : 0;
 
             try {
                 const r = await fetch(`${API_URL}/grupos/${grupoId}/miembros/`);
@@ -839,9 +1114,15 @@
                     return;
                 }
 
+                const esAdminActual = Boolean(
+                    adminIdActual && miembros.some(
+                        x => x.familiar_id === adminIdActual && x.rol_grupo === 'admin' && x.estado === 'aprobado'
+                    )
+                );
+
                 tbody.innerHTML = miembros.map(m => {
-                    let accionesHtml = '<span class="muted">—</span>';
-                    if (m.estado === 'pendiente') {
+                    let accionesHtml = '<span class="muted">Solo admin</span>';
+                    if (m.estado === 'pendiente' && esAdminActual) {
                         accionesHtml = `
                             <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
                                 <button class="btn primary" style="padding:0.35rem 0.65rem;font-size:0.85rem;" type="button"
@@ -850,6 +1131,8 @@
                                     onclick="decidirMiembro(${m.miembro_id}, false)">Rechazar</button>
                             </div>
                         `;
+                    } else if (m.estado !== 'pendiente') {
+                        accionesHtml = '<span class="muted">—</span>';
                     }
                     return `
                         <tr>
@@ -862,28 +1145,23 @@
                         </tr>
                     `;
                 }).join('');
-
-                if (!adminId) {
-                    const primerAdmin = miembros.find(x => x.rol_grupo === 'admin' && x.estado === 'aprobado');
-                    if (primerAdmin) $('gestionAdminId').value = primerAdmin.familiar_id;
-                }
             } catch (err) {
                 tbody.innerHTML = '<tr><td colspan="6">Error de conexión al consultar los miembros.</td></tr>';
             }
         }
 
         window.decidirMiembro = async function (miembroId, aprobar) {
-            const adminId = parseInt($('gestionAdminId').value, 10);
-            if (!adminId) {
-                alert('Completá primero el "ID Familiar admin" para aprobar o rechazar.');
+            if (!sesionFamiliar || sesionFamiliar.rol !== 'familiar') {
+                alert('Iniciá sesión como familiar administrador antes de aprobar o rechazar.');
                 return;
             }
+            const adminId = parseInt(sesionFamiliar.id, 10);
             const res = await llamar(
                 aprobar ? 'Aprobar miembro' : 'Rechazar miembro',
                 `/grupos/miembros/${miembroId}/decidir/`,
                 put({ admin_familiar_id: adminId, aprobar })
             );
-            if (res) {
+            if (res && !res.__error) {
                 cargarMiembrosGrupo();
             }
         };
@@ -903,15 +1181,58 @@
                 };
 
                 const data = await llamar('Crear grupo', '/grupos/', post(payload), submitBtn(ev.target));
-                if (data) {
+                if (data && !data.__error) {
                     renderInfoGrupo(data);
                     const resBox = $('resCrearGrupo');
                     if (resBox) {
                         resBox.hidden = false;
                         resBox.textContent = `Grupo #${data.grupo_id} listo · Token de 6 dígitos: ${data.codigo_token}`;
                     }
-                    if (adminRaw) $('gestionAdminId').value = adminRaw;
                     cargarMiembrosGrupo();
+                    cargarMiGrupoDesktop();
+                } else if (data && data.__error) {
+                    const resBox = $('resCrearGrupo');
+                    if (resBox) {
+                        resBox.hidden = false;
+                        resBox.textContent = `⚠️ ${data.detail}`;
+                    }
+                }
+            };
+        }
+
+        const formAgregarAdultoGrupo = $('formAgregarAdultoGrupo');
+        if (formAgregarAdultoGrupo) {
+            formAgregarAdultoGrupo.onsubmit = async (ev) => {
+                ev.preventDefault();
+                if (!sesionFamiliar || sesionFamiliar.rol !== 'familiar') {
+                    alert('Iniciá sesión como familiar administrador.');
+                    return;
+                }
+                const grupoId = parseInt($('agregarAdultoGrupoId').value, 10);
+                const adultoId = parseInt($('agregarAdultoId').value, 10);
+                const adminId = parseInt(sesionFamiliar.id, 10);
+
+                const data = await llamar(
+                    'Agregar adulto mayor',
+                    `/grupos/${grupoId}/adultos/`,
+                    post({ admin_familiar_id: adminId, adulto_id: adultoId }),
+                    submitBtn(ev.target)
+                );
+                if (data && !data.__error) {
+                    const resBox = $('resAgregarAdultoGrupo');
+                    if (resBox) {
+                        resBox.hidden = false;
+                        resBox.textContent = data.mensaje;
+                    }
+                    $('gestionGrupoId').value = grupoId;
+                    cargarMiembrosGrupo();
+                    cargarMiGrupoDesktop();
+                } else if (data && data.__error) {
+                    const resBox = $('resAgregarAdultoGrupo');
+                    if (resBox) {
+                        resBox.hidden = false;
+                        resBox.textContent = `⚠️ ${data.detail}`;
+                    }
                 }
             };
         }
@@ -929,7 +1250,7 @@
                     post({ familiar_id: familiarId, codigo_token: codigoToken }),
                     submitBtn(ev.target)
                 );
-                if (data) {
+                if (data && !data.__error) {
                     const resBox = $('resUnirseGrupo');
                     if (resBox) {
                         resBox.hidden = false;
@@ -939,6 +1260,13 @@
                         $('gestionGrupoId').value = data.grupo_id;
                         cargarMiembrosGrupo();
                     }
+                    cargarMiGrupoDesktop();
+                } else if (data && data.__error) {
+                    const resBox = $('resUnirseGrupo');
+                    if (resBox) {
+                        resBox.hidden = false;
+                        resBox.textContent = `⚠️ ${data.detail}`;
+                    }
                 }
             };
         }
@@ -947,6 +1275,87 @@
         if (btnCargarMiembros) {
             btnCargarMiembros.onclick = cargarMiembrosGrupo;
         }
+    </script>
+    <!-- ÍNDICE DE PROGRESO (pegar justo antes de </body>, después del último </script>) -->
+    <script>
+        /* Índice de progreso fijo: arma su propia barra y lee el estado de la pantalla.
+           No esconde ni pliega ninguna tarjeta. Los estilos viven en panel.css. */
+        (function () {
+            var $ = function (id) { return document.getElementById(id); };
+            var main = document.querySelector('main.steps');
+            if (!main || $('progresoNav')) return;
+            var root = document.documentElement, ayudaProbada = false;
+
+            var defs = [
+                ['formUsuario', '01', 'Personas'], ['cardGrupoFamiliar', '02', 'Grupo'], ['formVinculo', '03', 'Vínculo'],
+                ['formSesion', '04', 'Pantalla'], ['formUbicacion', '05', 'Ubicación'], ['formAyuda', '06', 'SOS'],
+                ['cardHistorial', '07', 'Historial']
+            ];
+            var nav = document.createElement('nav');
+            nav.className = 'progress';
+            nav.id = 'progresoNav';
+            nav.setAttribute('aria-label', 'Progreso de los pasos');
+            nav.innerHTML = '<div class="progress-in"><p class="progress-sum" id="progresoResumen" role="status"></p><ol class="progress-list">' +
+                defs.map(function (d) {
+                    return '<li data-paso="' + d[0] + '"><a class="p-link" href="#' + d[0] + '"><span class="p-dot" aria-hidden="true" data-n="' + d[1] + '">' + d[1] +
+                        '</span><span class="p-text"><span class="p-label">' + d[2] + '</span><span class="p-state">Pendiente</span></span></a></li>';
+                }).join('') + '</ol></div>';
+            main.parentNode.insertBefore(nav, main);
+
+            var visible = function (id) { var e = $(id); return !!e && !e.hidden; };
+            function sesion(box, badge) {
+                if (!visible(box)) return 'pendiente';
+                var c = ($(badge) || {}).className || '';
+                return /wait|live/.test(c) ? 'curso' : 'hecho';
+            }
+            var estados = {
+                formUsuario: function () { return visible('ultimoUsuarioCreado') ? 'hecho' : 'pendiente'; },
+                cardGrupoFamiliar: function () { var t = (($('grupoActivoPill') || {}).textContent || '').trim(); return t && !/sin grupo/i.test(t) ? 'hecho' : 'pendiente'; },
+                formVinculo: function () { return visible('qrContainer') ? 'hecho' : 'pendiente'; },
+                formSesion: function () { return sesion('sessionBox', 'sessionBadge'); },
+                formUbicacion: function () { return sesion('geoBox', 'geoBadge'); },
+                formAyuda: function () { return ayudaProbada ? 'hecho' : 'pendiente'; },
+                cardHistorial: function () { return 'info'; }
+            };
+            var texto = { pendiente: 'Pendiente', curso: 'En curso', hecho: 'Hecho', info: 'Consultar' };
+
+            function render() {
+                var hechos = 0, total = 0;
+                defs.forEach(function (d) {
+                    var li = nav.querySelector('[data-paso="' + d[0] + '"]'), e = estados[d[0]]();
+                    li.dataset.state = e;
+                    li.querySelector('.p-state').textContent = texto[e];
+                    var dot = li.querySelector('.p-dot');
+                    dot.textContent = e === 'hecho' ? '✓' : dot.dataset.n;
+                    if (e !== 'info') { total++; if (e === 'hecho') hechos++; }
+                });
+                $('progresoResumen').textContent = hechos + ' de ' + total + ' pasos hechos';
+            }
+            function medir() {
+                var top = document.querySelector('.top');
+                var fijo = top && getComputedStyle(top).position === 'sticky';
+                root.style.setProperty('--top-h', (fijo ? top.offsetHeight : 0) + 'px');
+                root.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+            }
+            function actual() {
+                var off = (parseFloat(getComputedStyle(root).getPropertyValue('--top-h')) || 0) + nav.offsetHeight + 24, cur = defs[0][0];
+                defs.forEach(function (d) { var e = $(d[0]); if (e && e.getBoundingClientRect().top <= off) cur = d[0]; });
+                defs.forEach(function (d) {
+                    var a = nav.querySelector('[data-paso="' + d[0] + '"] a');
+                    if (d[0] === cur) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current');
+                });
+            }
+            var raf = 0;
+            function pedir() { cancelAnimationFrame(raf); raf = requestAnimationFrame(function () { render(); medir(); actual(); }); }
+
+            var f = $('formAyuda');
+            if (f) f.addEventListener('submit', function () { ayudaProbada = true; pedir(); });
+            new MutationObserver(pedir).observe(main, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+            window.addEventListener('scroll', pedir, { passive: true });
+            window.addEventListener('resize', pedir);
+            if (window.ResizeObserver) { var ro = new ResizeObserver(pedir); ro.observe(nav); var t = document.querySelector('.top'); if (t) ro.observe(t); }
+            pedir();
+        })();
     </script>
 </body>
 

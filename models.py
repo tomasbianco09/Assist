@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey
 from database import Base
 import datetime
 
+
 class UsuarioModel(Base):
     __tablename__ = "usuarios"
 
@@ -11,6 +12,7 @@ class UsuarioModel(Base):
     rol = Column(String, nullable=False)  # "adulto_mayor" o "familiar"
     conectado = Column(Integer, default=1)  # 1 = activo, 0 = cerró sesión (D-02)
 
+
 class DispositivoModel(Base):
     __tablename__ = "dispositivos"
 
@@ -18,6 +20,7 @@ class DispositivoModel(Base):
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
     tipo = Column(String, nullable=False)  # "movil" o "escritorio"
     token_acceso = Column(String, unique=True, nullable=False)
+
 
 class VinculoModel(Base):
     __tablename__ = "vinculos"
@@ -28,13 +31,16 @@ class VinculoModel(Base):
     codigo_qr = Column(String, unique=True, nullable=False)
     fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
 
+
 class SolicitudModel(Base):
     __tablename__ = "solicitudes"
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"))
+    destino_familiar_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)  # None = todos los del grupo
     estado = Column(String, nullable=False)  # "pendiente", "atendida"
     fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
+
 
 class SesionRemotaModel(Base):
     __tablename__ = "sesiones_remotas"
@@ -47,26 +53,38 @@ class SesionRemotaModel(Base):
     duracion_segundos = Column(Integer, nullable=True)
     cerrada_por = Column(String, nullable=True)  # "adulto_mayor", "familiar", "salida"
 
+
 class UbicacionModel(Base):
     __tablename__ = "ubicaciones"
 
     id = Column(Integer, primary_key=True, index=True)
     vinculo_id = Column(Integer, ForeignKey("vinculos.id"))
-    estado = Column(String, nullable=False)  # "pendiente_consentimiento", "compartida", "rechazada"
+    estado = Column(String, nullable=False)  # "pendiente_consentimiento", "compartida", "rechazada", "finalizada"
     latitud = Column(Float, nullable=True)
     longitud = Column(Float, nullable=True)
     fecha_solicitud = Column(DateTime, default=datetime.datetime.utcnow)
     fecha_respuesta = Column(DateTime, nullable=True)
+
 
 class GrupoFamiliarModel(Base):
     __tablename__ = "grupos_familiares"
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
-    adulto_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    adulto_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
     codigo_token = Column(String(6), unique=True, index=True, nullable=False)
     creado_por_familiar_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
     fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class GrupoAdultoModel(Base):
+    __tablename__ = "grupo_adultos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    grupo_id = Column(Integer, ForeignKey("grupos_familiares.id"), nullable=False)
+    adulto_id = Column(Integer, ForeignKey("usuarios.id"), unique=True, nullable=False)
+    fecha_asignacion = Column(DateTime, default=datetime.datetime.utcnow)
+
 
 class MiembroGrupoModel(Base):
     __tablename__ = "miembros_grupo"
