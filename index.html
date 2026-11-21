@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,26 +9,33 @@
     <script>
         (function () {
             var pref = null;
-            try { pref = localStorage.getItem('assist_contraste'); } catch (e) {}
+            try { pref = localStorage.getItem('assist_contraste'); } catch (e) { }
             var alto = pref ? pref === 'alto' : matchMedia('(prefers-contrast: more)').matches;
             document.documentElement.dataset.contrast = alto ? 'high' : 'normal';
         })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="panel.css">
 </head>
+
 <body>
     <header class="top">
         <div class="top-in">
             <span class="brand">
-                <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9"/><circle cx="12.5" cy="16" r="6"/><circle cx="19.5" cy="16" r="6"/></svg>
+                <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+                    <rect width="32" height="32" rx="9" />
+                    <circle cx="12.5" cy="16" r="6" />
+                    <circle cx="19.5" cy="16" r="6" />
+                </svg>
                 Assist
             </span>
             <div class="top-actions">
-                <span class="api-state" id="apiState"><span class="dot" aria-hidden="true"></span><span id="apiText">Buscando la API…</span></span>
+                <span class="api-state" id="apiState"><span class="dot" aria-hidden="true"></span><span
+                        id="apiText">Buscando la API…</span></span>
                 <button class="chip" id="hcSwitch" type="button" role="switch" aria-checked="false">
                     <span class="track" aria-hidden="true"><span class="knob"></span></span>
                     Alto contraste
@@ -35,9 +43,11 @@
                 <button class="chip" id="toggleLogFloatBtn" type="button">
                     📋 Ver registro técnico
                 </button>
-                <a class="chip primary-chip" href="http://localhost:8000/mobile/?demo=1" target="_blank" rel="noopener">
+                <a class="chip primary-chip" id="openMobileLink" href="/mobile/?demo=1" target="_blank" rel="noopener">
                     Abrir app del celular
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 17 17 7M9 7h8v8" />
+                    </svg>
                 </a>
             </div>
         </div>
@@ -56,24 +66,28 @@
         <section class="intro">
             <p class="kicker">Panel de control · Sprint 2</p>
             <h1>Centro de asistencia para el familiar</h1>
-            <p class="lead">Desde aquí configuras el vínculo familiar y realizas las acciones de asistencia remota. Para probar la experiencia completa, abre la <strong>app del celular</strong> en otra pestaña.</p>
+            <p class="lead">Desde aquí configuras el vínculo familiar y realizas las acciones de asistencia remota. Para
+                probar la experiencia completa, abre la <strong>app del celular</strong> en otra pestaña.</p>
 
             <!-- Guía rápida de uso paso a paso -->
             <div class="QuickGuide" aria-label="Guía rápida de cómo funciona Assist">
                 <div class="guide-step">
                     <span class="guide-num">Paso A</span>
                     <strong>Registra y vincula (Pasos 01 y 02)</strong>
-                    <p>Crea un usuario <em>Familiar</em> y un <em>Adulto mayor</em> (o usa IDs existentes) y genera su código QR para obtener el <strong>ID del vínculo</strong>.</p>
+                    <p>Crea un usuario <em>Familiar</em> y un <em>Adulto mayor</em> (o usa IDs existentes) y genera su
+                        código QR para obtener el <strong>ID del vínculo</strong>.</p>
                 </div>
                 <div class="guide-step">
                     <span class="guide-num">Paso B</span>
                     <strong>Abre el celular del adulto mayor</strong>
-                    <p>Haz clic arriba en <strong>“Abrir app del celular”</strong> e ingresa con el correo del adulto mayor para recibir los pedidos en vivo.</p>
+                    <p>Haz clic arriba en <strong>“Abrir app del celular”</strong> e ingresa con el correo del adulto
+                        mayor para recibir los pedidos en vivo.</p>
                 </div>
                 <div class="guide-step">
                     <span class="guide-num">Paso C</span>
                     <strong>Asiste con permiso (Pasos 03 al 06)</strong>
-                    <p>Pide ver la pantalla o la ubicación desde este panel, acepta desde el celular y revisa el historial de auditoría.</p>
+                    <p>Pide ver la pantalla o la ubicación desde este panel, acepta desde el celular y revisa el
+                        historial de auditoría.</p>
                 </div>
             </div>
         </section>
@@ -96,23 +110,28 @@
                         <span class="num" aria-hidden="true">01</span>
                         <div>
                             <h2>Registrar a una persona</h2>
-                            <p>Crea primero un <strong>Familiar</strong> y luego un <strong>Adulto mayor</strong>. Sus IDs se cargarán solos en el paso 02.</p>
+                            <p>Crea primero un <strong>Familiar</strong> y luego un <strong>Adulto mayor</strong>. Sus
+                                IDs se cargarán solos en el paso 02.</p>
                         </div>
                     </header>
                     <div class="grid-3">
                         <div class="field-wrap">
                             <label for="nuevoNombre">Nombre completo</label>
-                            <input class="field" type="text" id="nuevoNombre" placeholder="Rosa Fernández" autocomplete="off">
+                            <input class="field" type="text" id="nuevoNombre" placeholder="Rosa Fernández"
+                                autocomplete="off">
                         </div>
                         <div class="field-wrap">
                             <label for="nuevoEmail">Correo electrónico</label>
-                            <input class="field" type="email" id="nuevoEmail" placeholder="rosa@correo.com" autocomplete="off">
+                            <input class="field" type="email" id="nuevoEmail" placeholder="rosa@correo.com"
+                                autocomplete="off">
                         </div>
                         <fieldset class="field-wrap">
                             <legend>Rol en la app</legend>
                             <div class="seg">
-                                <label><input type="radio" name="nuevoRol" value="adulto_mayor" checked><span>Adulto mayor</span></label>
-                                <label><input type="radio" name="nuevoRol" value="familiar"><span>Familiar</span></label>
+                                <label><input type="radio" name="nuevoRol" value="adulto_mayor" checked><span>Adulto
+                                        mayor</span></label>
+                                <label><input type="radio" name="nuevoRol"
+                                        value="familiar"><span>Familiar</span></label>
                             </div>
                         </fieldset>
                     </div>
@@ -128,7 +147,8 @@
                         <span class="num" aria-hidden="true">02</span>
                         <div>
                             <h2>Vincular los celulares <small>HU-01</small></h2>
-                            <p>Une al familiar con el adulto mayor mediante un código QR y habilita el ID del vínculo para las asistencias.</p>
+                            <p>Une al familiar con el adulto mayor mediante un código QR y habilita el ID del vínculo
+                                para las asistencias.</p>
                         </div>
                     </header>
                     <div class="grid-2">
@@ -145,7 +165,8 @@
                     <figure class="qr" id="qrContainer" hidden>
                         <img id="qrImage" src="" alt="Código QR de vinculación">
                         <figcaption>
-                            <strong>¡Vínculo #<span id="qrVinculoId"></span> activo!</strong> Ya se copió automáticamente en los pasos 03 y 04.<br>
+                            <strong>¡Vínculo #<span id="qrVinculoId"></span> activo!</strong> Ya se copió
+                            automáticamente en los pasos 03 y 04.<br>
                             <span>Token QR: <code id="qrToken"></code></span>
                         </figcaption>
                     </figure>
@@ -171,7 +192,8 @@
                             </div>
                         </header>
                         <div class="step-flow-hint">
-                            <span><strong>1.</strong> Toca el botón abajo</span> → <span><strong>2.</strong> El adulto acepta en su celular</span>
+                            <span><strong>1.</strong> Toca el botón abajo</span> → <span><strong>2.</strong> El adulto
+                                acepta en su celular</span>
                         </div>
                         <div class="field-wrap narrow">
                             <label for="vinculoId">ID del vínculo activo</label>
@@ -198,7 +220,8 @@
                             </div>
                         </header>
                         <div class="step-flow-hint">
-                            <span><strong>1.</strong> Solicita la ubicación</span> → <span><strong>2.</strong> Al aceptar en el celular, se abre el mapa</span>
+                            <span><strong>1.</strong> Solicita la ubicación</span> → <span><strong>2.</strong> Al
+                                aceptar en el celular, se abre el mapa</span>
                         </div>
                         <div class="field-wrap narrow">
                             <label for="vinculoGeoId">ID del vínculo activo</label>
@@ -226,7 +249,8 @@
                         <span class="num" aria-hidden="true">05</span>
                         <div>
                             <h2>Simular botón de emergencia SOS <small>HU-02 · SCRUM-49</small></h2>
-                            <p>Simula que el adulto mayor tocó <strong>“🚨 Pedir ayuda a mi familia”</strong> en su celular y activa el banner rojo de notificación Push arriba del todo.</p>
+                            <p>Simula que el adulto mayor tocó <strong>“🚨 Pedir ayuda a mi familia”</strong> en su
+                                celular y activa el banner rojo de notificación Push arriba del todo.</p>
                         </div>
                     </header>
                     <div class="card-actions-row">
@@ -245,7 +269,8 @@
                         <div class="card-head-flex">
                             <div>
                                 <h2>Historial y auditoría de sesiones <small>HU-04 · HU-08</small></h2>
-                                <p>Registro transparente con fecha, hora, duración exacta y quién finalizó cada asistencia.</p>
+                                <p>Registro transparente con fecha, hora, duración exacta y quién finalizó cada
+                                    asistencia.</p>
                             </div>
                             <button class="btn" type="button" id="refreshHistorialBtn">Actualizar tabla</button>
                         </div>
@@ -262,7 +287,9 @@
                                 </tr>
                             </thead>
                             <tbody id="historialBody">
-                                <tr><td colspan="5">Cargando historial…</td></tr>
+                                <tr>
+                                    <td colspan="5">Cargando historial…</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -289,7 +316,9 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
-        const API_URL = "http://localhost:8000";
+        const API_URL = window.location.protocol.startsWith('http')
+            ? window.location.origin
+            : 'http://localhost:8000';
         const $log = document.getElementById('resultado');
         const $ = id => document.getElementById(id);
 
@@ -343,7 +372,7 @@
                         const u = await r.json();
                         $('famHint').textContent = `(${u.nombre} · ${u.rol})`;
                     } else { $('famHint').textContent = ''; }
-                } catch (e) {}
+                } catch (e) { }
             }
             if (aId) {
                 try {
@@ -352,7 +381,7 @@
                         const u = await r.json();
                         $('adHint').textContent = `(${u.nombre} · ${u.rol})`;
                     } else { $('adHint').textContent = ''; }
-                } catch (e) {}
+                } catch (e) { }
             }
         }
         $('famId').onchange = actualizarNombresIds;
@@ -365,7 +394,7 @@
             const rol = document.querySelector('input[name="nuevoRol"]:checked').value;
             if (!nombre || !email) {
                 registrar('Registrar', 'Completa el nombre y el correo.', 'warn');
-                (nombre ? $('nuevoEmail' ) : $('nuevoNombre')).focus();
+                (nombre ? $('nuevoEmail') : $('nuevoNombre')).focus();
                 return;
             }
             const data = await llamar('Registrar', '/usuarios/', post({ nombre, email, rol }), submitBtn(ev.target));
@@ -431,7 +460,7 @@
                     $('pushBanner').hidden = true;
                     alertaActualId = null;
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         $('atenderPushBtn').onclick = async () => {
@@ -478,7 +507,7 @@
                     registrar('Sesión #' + sesionId, data, 'ok');
                     cargarHistorial();
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         $('formSesion').onsubmit = async ev => {
@@ -568,7 +597,7 @@
                     pintarGeo(data);
                     registrar('Ubicación #' + geoId, data, 'ok');
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         $('formUbicacion').onsubmit = async ev => {
@@ -625,7 +654,7 @@
                         <td><span class="hist-status">${s.estado}${detalleCierre}</span></td>
                     </tr>`;
                 }).join('');
-            } catch (e) {}
+            } catch (e) { }
         }
 
         $('refreshHistorialBtn').onclick = cargarHistorial;
@@ -650,8 +679,9 @@
         $hc.onclick = () => {
             const alto = $hc.getAttribute('aria-checked') !== 'true';
             aplicarContraste(alto);
-            try { localStorage.setItem('assist_contraste', alto ? 'alto' : 'normal'); } catch (e) {}
+            try { localStorage.setItem('assist_contraste', alto ? 'alto' : 'normal'); } catch (e) { }
         };
     </script>
 </body>
+
 </html>

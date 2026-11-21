@@ -15,7 +15,7 @@ function setting(key, fallback) {
 }
 
 const defaultApi = location.protocol.startsWith('http')
-  ? `${location.protocol}//${location.hostname}:8000`
+  ? location.origin
   : 'http://localhost:8000';
 const API = setting('api', defaultApi).replace(/\/$/, '');
 const POLL_MS = 3000;
