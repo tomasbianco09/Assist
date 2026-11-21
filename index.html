@@ -172,6 +172,100 @@
                     </figure>
                 </form>
 
+                <!-- GRUPO FAMILIAR: Token de 6 dígitos y aprobación por familiar admin -->
+                <section class="card" id="cardGrupoFamiliar" aria-label="Grupo familiar y token de 6 dígitos">
+                    <div class="card-head">
+                        <div>
+                            <span class="step-tag">Grupo · Acceso</span>
+                            <h2>Grupo familiar y token de 6 dígitos</h2>
+                        </div>
+                        <span class="pill" id="grupoActivoPill">Sin grupo cargado</span>
+                    </div>
+                    <p class="card-desc">
+                        Creá el grupo de un adulto mayor para obtener su <strong>token de 6 dígitos</strong>, sumá
+                        familiares con ese código y aprobá solicitudes pendientes desde el familiar administrador.
+                    </p>
+
+                    <div class="grid-2"
+                        style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;">
+                        <!-- Crear grupo y obtener token de 6 dígitos -->
+                        <form id="formCrearGrupo" class="sub-box">
+                            <h3>1. Crear grupo del adulto mayor</h3>
+                            <div class="field-wrap">
+                                <label for="grupoAdultoId">ID Adulto mayor</label>
+                                <input class="field" id="grupoAdultoId" type="number" min="1" placeholder="Ej: 1"
+                                    required />
+                            </div>
+                            <div class="field-wrap">
+                                <label for="grupoAdminId">ID Familiar administrador (opcional)</label>
+                                <input class="field" id="grupoAdminId" type="number" min="1" placeholder="Ej: 2" />
+                            </div>
+                            <div class="field-wrap">
+                                <label for="grupoNombre">Nombre del grupo (opcional)</label>
+                                <input class="field" id="grupoNombre" type="text" placeholder="Ej: Familia de Rosa" />
+                            </div>
+                            <button class="btn primary" type="submit">Crear grupo y generar token</button>
+                            <div class="result-box" id="resCrearGrupo" hidden></div>
+                        </form>
+
+                        <!-- Unirse con token de 6 dígitos -->
+                        <form id="formUnirseGrupo" class="sub-box">
+                            <h3>2. Unirse con token de 6 dígitos</h3>
+                            <div class="field-wrap">
+                                <label for="unirseFamiliarId">ID Familiar que se une</label>
+                                <input class="field" id="unirseFamiliarId" type="number" min="1" placeholder="Ej: 3"
+                                    required />
+                            </div>
+                            <div class="field-wrap">
+                                <label for="unirseToken">Token de 6 dígitos</label>
+                                <input class="field" id="unirseToken" type="text" inputmode="numeric" maxlength="6"
+                                    pattern="\d{6}" placeholder="Ej: 048291" required />
+                            </div>
+                            <button class="btn primary" type="submit">Solicitar ingreso al grupo</button>
+                            <div class="result-box" id="resUnirseGrupo" hidden></div>
+                        </form>
+                    </div>
+
+                    <!-- Ver miembros y aprobar/rechazar como familiar administrador -->
+                    <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--line, #e2d9c8);">
+                        <div class="row-inline" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end;">
+                            <div class="field-wrap" style="min-width:120px;margin:0;">
+                                <label for="gestionGrupoId">ID Grupo</label>
+                                <input class="field" id="gestionGrupoId" type="number" min="1" placeholder="Ej: 1" />
+                            </div>
+                            <div class="field-wrap" style="min-width:160px;margin:0;">
+                                <label for="gestionAdminId">ID Familiar admin</label>
+                                <input class="field" id="gestionAdminId" type="number" min="1" placeholder="Ej: 2" />
+                            </div>
+                            <button class="btn ghost" type="button" id="btnCargarMiembros">Ver miembros del
+                                grupo</button>
+                        </div>
+
+                        <div id="infoTokenGrupo" style="margin-top:0.75rem;" hidden></div>
+
+                        <div style="margin-top:0.75rem;overflow:auto;">
+                            <table class="hist-table" id="tablaMiembrosGrupo">
+                                <thead>
+                                    <tr>
+                                        <th>ID Miembro</th>
+                                        <th>Familiar</th>
+                                        <th>Correo</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Acción del Admin</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyMiembrosGrupo">
+                                    <tr>
+                                        <td colspan="6">Indicá un ID de grupo y tocá <strong>Ver miembros del
+                                                grupo</strong>.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- ======================================================= -->
                 <!-- FASE 2: CENTRO DE ASISTENCIA DIARIA                     -->
                 <!-- ======================================================= -->
@@ -360,6 +454,7 @@
             }
         }
         const post = body => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const put = body => ({ method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const submitBtn = form => form.querySelector('button[type="submit"]');
 
         async function actualizarNombresIds() {
@@ -409,6 +504,7 @@
                 } else {
                     $('adId').value = data.id;
                     $('adultoId').value = data.id;
+                    $('grupoAdultoId').value = data.id;
                 }
                 actualizarNombresIds();
             }
@@ -681,6 +777,176 @@
             aplicarContraste(alto);
             try { localStorage.setItem('assist_contraste', alto ? 'alto' : 'normal'); } catch (e) { }
         };
+
+        // ==========================================
+        // Grupo Familiar: Token 6 dígitos + Admin
+        // ==========================================
+        function renderInfoGrupo(data) {
+            const box = $('infoTokenGrupo');
+            const pill = $('grupoActivoPill');
+            if (!box || !data) return;
+
+            if (data.grupo_id) {
+                $('gestionGrupoId').value = data.grupo_id;
+            }
+            if (pill && data.codigo_token) {
+                pill.textContent = `Token: ${data.codigo_token}`;
+            }
+
+            box.hidden = false;
+            box.innerHTML = `
+                <div class="pill" style="display:inline-flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                    <span><strong>${data.nombre || 'Grupo familiar'}</strong> (ID #${data.grupo_id})</span>
+                    <span>· Token de 6 dígitos: <code id="codigoTokenValor">${data.codigo_token}</code></span>
+                    <button class="link-btn" type="button" id="btnCopiarTokenGrupo">Copiar token</button>
+                </div>
+            `;
+
+            const btnCopy = $('btnCopiarTokenGrupo');
+            if (btnCopy) {
+                btnCopy.onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(String(data.codigo_token));
+                        btnCopy.textContent = '✓ Copiado';
+                        setTimeout(() => { btnCopy.textContent = 'Copiar token'; }, 1500);
+                    } catch (_) { }
+                };
+            }
+        }
+
+        async function cargarMiembrosGrupo() {
+            const grupoId = parseInt($('gestionGrupoId').value, 10);
+            const adminId = parseInt($('gestionAdminId').value, 10);
+            const tbody = $('tbodyMiembrosGrupo');
+            if (!grupoId) {
+                tbody.innerHTML = '<tr><td colspan="6">Ingresá un ID de grupo válido.</td></tr>';
+                return;
+            }
+
+            try {
+                const r = await fetch(`${API_URL}/grupos/${grupoId}/miembros/`);
+                const data = await r.json();
+                if (!r.ok) {
+                    tbody.innerHTML = `<tr><td colspan="6">${data.detail || 'No se pudo cargar el grupo.'}</td></tr>`;
+                    return;
+                }
+
+                renderInfoGrupo(data);
+
+                const miembros = data.miembros || [];
+                if (miembros.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6">No hay familiares registrados en este grupo todavía.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = miembros.map(m => {
+                    let accionesHtml = '<span class="muted">—</span>';
+                    if (m.estado === 'pendiente') {
+                        accionesHtml = `
+                            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                                <button class="btn primary" style="padding:0.35rem 0.65rem;font-size:0.85rem;" type="button"
+                                    onclick="decidirMiembro(${m.miembro_id}, true)">Aprobar</button>
+                                <button class="btn ghost" style="padding:0.35rem 0.65rem;font-size:0.85rem;" type="button"
+                                    onclick="decidirMiembro(${m.miembro_id}, false)">Rechazar</button>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <tr>
+                            <td><strong>#${m.miembro_id}</strong></td>
+                            <td>${m.familiar_nombre} (ID #${m.familiar_id})</td>
+                            <td><code>${m.familiar_email || '—'}</code></td>
+                            <td>${m.rol_grupo === 'admin' ? '👑 Admin' : 'Familiar'}</td>
+                            <td>${m.estado}</td>
+                            <td>${accionesHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                if (!adminId) {
+                    const primerAdmin = miembros.find(x => x.rol_grupo === 'admin' && x.estado === 'aprobado');
+                    if (primerAdmin) $('gestionAdminId').value = primerAdmin.familiar_id;
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6">Error de conexión al consultar los miembros.</td></tr>';
+            }
+        }
+
+        window.decidirMiembro = async function (miembroId, aprobar) {
+            const adminId = parseInt($('gestionAdminId').value, 10);
+            if (!adminId) {
+                alert('Completá primero el "ID Familiar admin" para aprobar o rechazar.');
+                return;
+            }
+            const res = await llamar(
+                aprobar ? 'Aprobar miembro' : 'Rechazar miembro',
+                `/grupos/miembros/${miembroId}/decidir/`,
+                put({ admin_familiar_id: adminId, aprobar })
+            );
+            if (res) {
+                cargarMiembrosGrupo();
+            }
+        };
+
+        const formCrearGrupo = $('formCrearGrupo');
+        if (formCrearGrupo) {
+            formCrearGrupo.onsubmit = async (ev) => {
+                ev.preventDefault();
+                const adultoId = parseInt($('grupoAdultoId').value, 10);
+                const adminRaw = $('grupoAdminId').value.trim();
+                const nombreRaw = $('grupoNombre').value.trim();
+
+                const payload = {
+                    adulto_id: adultoId,
+                    familiar_admin_id: adminRaw ? parseInt(adminRaw, 10) : null,
+                    nombre: nombreRaw || null
+                };
+
+                const data = await llamar('Crear grupo', '/grupos/', post(payload), submitBtn(ev.target));
+                if (data) {
+                    renderInfoGrupo(data);
+                    const resBox = $('resCrearGrupo');
+                    if (resBox) {
+                        resBox.hidden = false;
+                        resBox.textContent = `Grupo #${data.grupo_id} listo · Token de 6 dígitos: ${data.codigo_token}`;
+                    }
+                    if (adminRaw) $('gestionAdminId').value = adminRaw;
+                    cargarMiembrosGrupo();
+                }
+            };
+        }
+
+        const formUnirseGrupo = $('formUnirseGrupo');
+        if (formUnirseGrupo) {
+            formUnirseGrupo.onsubmit = async (ev) => {
+                ev.preventDefault();
+                const familiarId = parseInt($('unirseFamiliarId').value, 10);
+                const codigoToken = $('unirseToken').value.trim();
+
+                const data = await llamar(
+                    'Unirse a grupo',
+                    '/grupos/unirse/',
+                    post({ familiar_id: familiarId, codigo_token: codigoToken }),
+                    submitBtn(ev.target)
+                );
+                if (data) {
+                    const resBox = $('resUnirseGrupo');
+                    if (resBox) {
+                        resBox.hidden = false;
+                        resBox.textContent = `${data.mensaje} (Rol: ${data.rol_grupo} · Estado: ${data.estado})`;
+                    }
+                    if (data.grupo_id) {
+                        $('gestionGrupoId').value = data.grupo_id;
+                        cargarMiembrosGrupo();
+                    }
+                }
+            };
+        }
+
+        const btnCargarMiembros = $('btnCargarMiembros');
+        if (btnCargarMiembros) {
+            btnCargarMiembros.onclick = cargarMiembrosGrupo;
+        }
     </script>
 </body>
 

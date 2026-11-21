@@ -6,6 +6,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import datetime
+import random
 import uuid
 import qrcode
 import io
@@ -14,8 +15,6 @@ import base64
 from database import engine, SessionLocal, Base
 import models
 import schemas
-
-import random
 
 # Crea las tablas automáticamente en SQLite al arrancar
 Base.metadata.create_all(bind=engine)
@@ -70,6 +69,16 @@ def cerrar_registro_sesion(sesion: models.SesionRemotaModel, nuevo_estado: str, 
         sesion.duracion_segundos = max(0, int((ahora - sesion.fecha_inicio).total_seconds()))
     else:
         sesion.duracion_segundos = 0
+
+def generar_token_6_digitos(db: Session) -> str:
+    for _ in range(30):
+        token = f"{random.randint(0, 999999):06d}"
+        existe = db.query(models.GrupoFamiliarModel).filter(
+            models.GrupoFamiliarModel.codigo_token == token
+        ).first()
+        if not existe:
+            return token
+    raise HTTPException(status_code=500, detail="No se pudo generar un token único de 6 dígitos.")
 
 @app.get("/")
 def read_root():
@@ -522,6 +531,212 @@ def finalizar_ubicacion(ubicacion_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"ubicacion_id": ubi.id, "estado": ubi.estado, "mensaje": "Visualización de ubicación finalizada."}
 
+# ==========================================
+# 6. Grupos Familiares (Token 6 dígitos + Admin)
+# ==========================================
+@app.post("/grupos/")
+def crear_grupo_familiar(req: schemas.GrupoCrearRequest, db: Session = Depends(get_db)):
+    adulto = db.query(models.UsuarioModel).filter(
+        models.UsuarioModel.id == req.adulto_id,
+        models.UsuarioModel.rol == "adulto_mayor"
+    ).first()
+    if not adulto:
+        raise HTTPException(status_code=404, detail="Adulto mayor no encontrado")
+
+    grupo_existente = db.query(models.GrupoFamiliarModel).filter(
+        models.GrupoFamiliarModel.adulto_id == adulto.id
+    ).first()
+    if grupo_existente:
+        return {
+            "grupo_id": grupo_existente.id,
+            "nombre": grupo_existente.nombre,
+            "adulto_id": grupo_existente.adulto_id,
+            "codigo_token": grupo_existente.codigo_token,
+            "mensaje": "El adulto mayor ya tenía un grupo familiar creado"
+        }
+
+    token = generar_token_6_digitos(db)
+    grupo = models.GrupoFamiliarModel(
+        nombre=req.nombre or f"Grupo de {adulto.nombre}",
+        adulto_id=adulto.id,
+        codigo_token=token,
+        creado_por_familiar_id=req.familiar_admin_id
+    )
+    db.add(grupo)
+    db.commit()
+    db.refresh(grupo)
+
+    if req.familiar_admin_id:
+        familiar = db.query(models.UsuarioModel).filter(
+            models.UsuarioModel.id == req.familiar_admin_id,
+            models.UsuarioModel.rol == "familiar"
+        ).first()
+        if familiar:
+            db.add(models.MiembroGrupoModel(
+                grupo_id=grupo.id,
+                familiar_id=familiar.id,
+                rol_grupo="admin",
+                estado="aprobado"
+            ))
+            vinculo = db.query(models.VinculoModel).filter(
+                models.VinculoModel.familiar_id == familiar.id,
+                models.VinculoModel.adulto_id == adulto.id
+            ).first()
+            if not vinculo:
+                db.add(models.VinculoModel(
+                    familiar_id=familiar.id,
+                    adulto_id=adulto.id,
+                    codigo_qr=str(uuid.uuid4())
+                ))
+            db.commit()
+
+    return {
+        "grupo_id": grupo.id,
+        "nombre": grupo.nombre,
+        "adulto_id": grupo.adulto_id,
+        "codigo_token": grupo.codigo_token,
+        "mensaje": "Grupo familiar creado con éxito"
+    }
+
+@app.post("/grupos/unirse/")
+def unirse_a_grupo(req: schemas.UnirseGrupoRequest, db: Session = Depends(get_db)):
+    familiar = db.query(models.UsuarioModel).filter(
+        models.UsuarioModel.id == req.familiar_id,
+        models.UsuarioModel.rol == "familiar"
+    ).first()
+    if not familiar:
+        raise HTTPException(status_code=404, detail="Familiar no encontrado")
+
+    grupo = db.query(models.GrupoFamiliarModel).filter(
+        models.GrupoFamiliarModel.codigo_token == req.codigo_token.strip()
+    ).first()
+    if not grupo:
+        raise HTTPException(status_code=404, detail="Token de grupo inválido")
+
+    existente = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == grupo.id,
+        models.MiembroGrupoModel.familiar_id == familiar.id
+    ).first()
+    if existente:
+        return {
+            "miembro_id": existente.id,
+            "grupo_id": grupo.id,
+            "estado": existente.estado,
+            "rol_grupo": existente.rol_grupo,
+            "mensaje": f"Ya existe una solicitud en el grupo con estado: {existente.estado}"
+        }
+
+    hay_admin = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == grupo.id,
+        models.MiembroGrupoModel.rol_grupo == "admin",
+        models.MiembroGrupoModel.estado == "aprobado"
+    ).first()
+
+    rol_asignado = "admin" if not hay_admin else "miembro"
+    estado_asignado = "aprobado" if not hay_admin else "pendiente"
+
+    miembro = models.MiembroGrupoModel(
+        grupo_id=grupo.id,
+        familiar_id=familiar.id,
+        rol_grupo=rol_asignado,
+        estado=estado_asignado
+    )
+    db.add(miembro)
+    db.commit()
+    db.refresh(miembro)
+
+    if estado_asignado == "aprobado":
+        vinculo = db.query(models.VinculoModel).filter(
+            models.VinculoModel.familiar_id == familiar.id,
+            models.VinculoModel.adulto_id == grupo.adulto_id
+        ).first()
+        if not vinculo:
+            db.add(models.VinculoModel(
+                familiar_id=familiar.id,
+                adulto_id=grupo.adulto_id,
+                codigo_qr=str(uuid.uuid4())
+            ))
+            db.commit()
+
+    return {
+        "miembro_id": miembro.id,
+        "grupo_id": grupo.id,
+        "codigo_token": grupo.codigo_token,
+        "rol_grupo": miembro.rol_grupo,
+        "estado": miembro.estado,
+        "mensaje": "Ingresaste como administrador del grupo" if estado_asignado == "aprobado" else "Solicitud enviada. Esperando aprobación del familiar administrador"
+    }
+
+@app.get("/grupos/{grupo_id}/miembros/")
+def listar_miembros_grupo(grupo_id: int, db: Session = Depends(get_db)):
+    grupo = db.query(models.GrupoFamiliarModel).filter(models.GrupoFamiliarModel.id == grupo_id).first()
+    if not grupo:
+        raise HTTPException(status_code=404, detail="Grupo no encontrado")
+
+    miembros = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == grupo_id
+    ).all()
+
+    salida = []
+    for m in miembros:
+        fam = db.query(models.UsuarioModel).filter(models.UsuarioModel.id == m.familiar_id).first()
+        salida.append({
+            "miembro_id": m.id,
+            "familiar_id": m.familiar_id,
+            "familiar_nombre": fam.nombre if fam else "Familiar",
+            "familiar_email": fam.email if fam else "",
+            "rol_grupo": m.rol_grupo,
+            "estado": m.estado
+        })
+    return {
+        "grupo_id": grupo.id,
+        "nombre": grupo.nombre,
+        "adulto_id": grupo.adulto_id,
+        "codigo_token": grupo.codigo_token,
+        "miembros": salida
+    }
+
+@app.put("/grupos/miembros/{miembro_id}/decidir/")
+def decidir_miembro_grupo(miembro_id: int, req: schemas.DecidirMiembroRequest, db: Session = Depends(get_db)):
+    miembro = db.query(models.MiembroGrupoModel).filter(models.MiembroGrupoModel.id == miembro_id).first()
+    if not miembro:
+        raise HTTPException(status_code=404, detail="Solicitud de miembro no encontrada")
+
+    admin = db.query(models.MiembroGrupoModel).filter(
+        models.MiembroGrupoModel.grupo_id == miembro.grupo_id,
+        models.MiembroGrupoModel.familiar_id == req.admin_familiar_id,
+        models.MiembroGrupoModel.rol_grupo == "admin",
+        models.MiembroGrupoModel.estado == "aprobado"
+    ).first()
+    if not admin:
+        raise HTTPException(status_code=403, detail="Solo un familiar administrador aprobado puede aprobar o rechazar miembros")
+
+    if req.aprobar:
+        miembro.estado = "aprobado"
+        grupo = db.query(models.GrupoFamiliarModel).filter(models.GrupoFamiliarModel.id == miembro.grupo_id).first()
+        if grupo:
+            vinculo = db.query(models.VinculoModel).filter(
+                models.VinculoModel.familiar_id == miembro.familiar_id,
+                models.VinculoModel.adulto_id == grupo.adulto_id
+            ).first()
+            if not vinculo:
+                db.add(models.VinculoModel(
+                    familiar_id=miembro.familiar_id,
+                    adulto_id=grupo.adulto_id,
+                    codigo_qr=str(uuid.uuid4())
+                ))
+    else:
+        miembro.estado = "rechazado"
+
+    db.commit()
+    db.refresh(miembro)
+    return {
+        "miembro_id": miembro.id,
+        "familiar_id": miembro.familiar_id,
+        "estado": miembro.estado,
+        "mensaje": "Miembro aprobado y vinculado al grupo" if req.aprobar else "Solicitud de ingreso rechazada"
+    }
+
 # Archivos estáticos del Panel y de la App Móvil
 BASE_DIR = Path(__file__).parent
 
@@ -534,13 +749,3 @@ def panel_css():
     return FileResponse(BASE_DIR / "panel.css")
 
 app.mount("/mobile", StaticFiles(directory=BASE_DIR / "mobile", html=True), name="mobile")
-
-def generar_token_6_digitos(db: Session) -> str:
-    for _ in range(20):
-        token = f"{random.randint(0, 999999):06d}"
-        existe = db.query(models.GrupoFamiliarModel).filter(
-            models.GrupoFamiliarModel.codigo_token == token
-        ).first()
-        if not existe:
-            return token
-    raise HTTPException(status_code=500, detail="No se pudo generar un token único")
