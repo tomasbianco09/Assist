@@ -27,8 +27,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
-    <link rel="stylesheet" href="panel.css?v=3">
+        href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+    <link rel="stylesheet" href="panel.css?v=4">
 </head>
 
 <body>
@@ -70,7 +70,7 @@
                     <!-- Iniciar sesión como familiar -->
                     <form class="card" id="formLoginFamiliar" novalidate>
                         <header class="card-head">
-                            <span class="num" aria-hidden="true">01</span>
+                            <span class="num" aria-hidden="true">1</span>
                             <div>
                                 <h2>Ya tengo cuenta de familiar</h2>
                                 <p>Ingresá con el correo con el que te registraste.</p>
@@ -87,7 +87,7 @@
                     <!-- Crear cuenta solo de familiar -->
                     <form class="card" id="formRegistroFamiliar" novalidate>
                         <header class="card-head">
-                            <span class="num" aria-hidden="true">02</span>
+                            <span class="num" aria-hidden="true">2</span>
                             <div>
                                 <h2>Crear cuenta de familiar</h2>
                                 <p>Registrate como familiar para crear un grupo o unirte con un token de 6 dígitos.</p>
@@ -115,6 +115,7 @@
             : 'http://localhost:8000';
         const CLAVE_SESION_FAM = 'assist_sesion_familiar';
         const $ = id => document.getElementById(id);
+        const emailValido = e => /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$/.test(e);
 
         function guardarYEntrar(usuario) {
             localStorage.setItem(CLAVE_SESION_FAM, JSON.stringify({
@@ -169,6 +170,12 @@
             if (!nombre || !email) {
                 errBox.textContent = 'Completá tu nombre y correo electrónico.';
                 errBox.hidden = false;
+                return;
+            }
+            if (!emailValido(email)) {
+                errBox.textContent = 'Ingresá un correo válido, por ejemplo nombre@correo.com.';
+                errBox.hidden = false;
+                $('regEmail').focus();
                 return;
             }
             const btn = ev.target.querySelector('button[type="submit"]');

@@ -1,34 +1,46 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="text-scale" content="scale">
   <meta name="theme-color" content="#F4EEE3">
   <title>Assist</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23245C43'/%3E%3Ccircle cx='12.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3Ccircle cx='19.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23245C43'/%3E%3Ccircle cx='12.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3Ccircle cx='19.5' cy='16' r='6' fill='none' stroke='%23FFFFFF' stroke-width='2.4'/%3E%3C/svg%3E">
   <script>
     (function () {
       var pref = null;
-      try { pref = localStorage.getItem('assist_contraste'); } catch (e) {}
+      try { pref = localStorage.getItem('assist_contraste'); } catch (e) { }
       var alto = pref ? pref === 'alto' : matchMedia('(prefers-contrast: more)').matches;
       document.documentElement.dataset.contrast = alto ? 'high' : 'normal';
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
+
 <body>
   <div class="app">
     <header class="top">
       <span class="brand">
-        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9"/><circle cx="12.5" cy="16" r="6"/><circle cx="19.5" cy="16" r="6"/></svg>
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="9" />
+          <circle cx="12.5" cy="16" r="6" />
+          <circle cx="19.5" cy="16" r="6" />
+        </svg>
         Assist
       </span>
       <button class="opts-btn" id="optsBtn" type="button" aria-haspopup="dialog" aria-controls="opts">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+          <circle cx="15" cy="7" r="2" />
+          <circle cx="9" cy="17" r="2" />
+        </svg>
         <span>Opciones</span>
       </button>
     </header>
@@ -60,7 +72,8 @@
       <span class="track" aria-hidden="true"><span class="knob"></span></span>
     </button>
 
-    <p class="hint">¿Letra muy chica? Agrándala desde la configuración de tu celular, en <em>Pantalla → Tamaño de fuente</em>. Assist se acomoda solo.</p>
+    <p class="hint">¿Letra muy chica? Agrándala desde la configuración de tu celular, en <em>Pantalla → Tamaño de
+        fuente</em>. Assist se acomoda solo.</p>
 
     <section class="account" id="historySection" hidden aria-labelledby="historyTitle">
       <h3 id="historyTitle">Historial de asistencias</h3>
@@ -73,7 +86,9 @@
       <h3 id="accountTitle">Tu cuenta</h3>
       <p class="account-who"><strong id="accName"></strong><br><span id="accEmail"></span></p>
       <button class="btn quiet" type="button" id="logoutBtn">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10" />
+        </svg>
         Salir de esta cuenta
       </button>
     </section>
@@ -81,4 +96,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>

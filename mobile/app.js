@@ -36,7 +36,30 @@ let timer = null;
 
 const esc = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const inicial = nombre => esc(String(nombre || '?').trim().charAt(0).toUpperCase() || '?');
-const primerNombre = nombre => String(nombre || '').trim().split(/\s+/)[0] || 'Usuario';
+/* Nombres bien escritos: "rosa fernández" -> "Rosa Fernández".
+   Solo toca palabras que están enteras en minúscula y respeta partículas (de, del, la...). */
+const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e', 'da', 'das', 'do', 'dos', 'di', 'van', 'von']);
+const bonito = nombre => String(nombre || '').trim().split(/\s+/).map((w, i) => {
+  if (!w || w !== w.toLowerCase()) return w;
+  if (i > 0 && PARTICULAS.has(w)) return w;
+  return w.charAt(0).toUpperCase() + w.slice(1);
+}).join(' ');
+/* Recorre la respuesta de la API y arregla todo campo "nombre" o "*_nombre". */
+function capNombres(x) {
+  if (Array.isArray(x)) return x.map(capNombres);
+  if (x && typeof x === 'object') {
+    const out = {};
+    for (const k of Object.keys(x)) {
+      const v = x[k];
+      if ((k === 'nombre' || k.endsWith('_nombre')) && typeof v === 'string') out[k] = bonito(v);
+      else if (k === 'familiares_aprobados' && Array.isArray(v)) out[k] = v.map(n => typeof n === 'string' ? bonito(n) : n);
+      else out[k] = capNombres(v);
+    }
+    return out;
+  }
+  return x;
+}
+const primerNombre = nombre => bonito(nombre).split(/\s+/)[0] || 'Usuario';
 
 async function api(path, options) {
   let res;
@@ -48,7 +71,7 @@ async function api(path, options) {
   let data = null;
   try { data = await res.json(); } catch (e) {}
   if (!res.ok) throw new Error((data && data.detail) || 'Error ' + res.status);
-  return data;
+  return capNombres(data);
 }
 
 const jsonBody = body => ({
@@ -131,7 +154,7 @@ function renderAccount() {
   if (usuario) {
     const accName = document.getElementById('accName');
     const accEmail = document.getElementById('accEmail');
-    if (accName) accName.textContent = usuario.nombre || '';
+    if (accName) accName.textContent = bonito(usuario.nombre);
     if (accEmail) accEmail.textContent = usuario.email || '';
   }
 }
@@ -257,7 +280,7 @@ function viewIdle(avisoAyuda) {
       <p class="status"><span class="dot" aria-hidden="true"></span> Esperando solicitudes</p>
       ${selectorDestinoHtml()}
       <div class="actions" style="width:100%">
-        <button class="btn primary" id="helpBtn" type="button">🚨 Pedir ayuda a mi familia</button>
+        <button class="btn primary" id="helpBtn" type="button">Pedir ayuda a mi familia</button>
       </div>
     </div>
     ${guideHtml()}`);

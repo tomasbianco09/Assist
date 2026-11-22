@@ -1,5 +1,5 @@
 :root{
-  --bg:#F4EEE3; --surface:#FFFCF6; --ink:#1C2B2D; --ink-2:#4D5B5C;
+  --bg:#F4EEE3; --surface:#FFFCF6; --ink:#1C2B2D; --ink-2:#3B4849;
   --line:#D9CEBC; --line-strong:#1C2B2D;
   --primary:#245C43; --primary-hover:#1B4A35; --primary-ink:#FFFFFF;
   --stop:#A8321F; --stop-ink:#FFFFFF;
@@ -7,7 +7,7 @@
   --wait:#9A5B0B; --focus:#1D4ED8;
   --log-bg:#1C2B2D; --log-ink:#EDE6D8; --log-dim:#A9B4B0; --log-ok:#8FD3A9; --log-warn:#F2C46D; --log-err:#FF9F8F;
   --bw:2px; --radius:1rem; --col:60rem; /* ancho único de columna: header, intro y tarjetas */
-  --display:'Fraunces',Georgia,'Times New Roman',serif;
+  --display:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --text:'Atkinson Hyperlegible Next','Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'Atkinson Hyperlegible Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
   --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -34,7 +34,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 .top{border-bottom:var(--bw) solid var(--line);background:var(--bg) var(--grain)}
 @media (min-width:64rem){.top{position:sticky;top:0;z-index:20}}
 .top-in{max-width:var(--col);margin:0 auto;padding:calc(.8rem + env(safe-area-inset-top)) 1.25rem .8rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1.25rem}
-.brand{display:inline-flex;align-items:center;gap:.45em;font-family:var(--display);font-weight:600;font-size:1.5rem;letter-spacing:-.01em}
+.brand{display:inline-flex;align-items:center;gap:.45em;font-family:var(--display);font-weight:800;font-size:1.4rem;letter-spacing:-.02em}
 .mark{width:1.3em;height:1.3em}
 .mark rect{fill:var(--primary);stroke:none}
 .mark circle{stroke:var(--primary-ink);stroke-width:2.4}
@@ -75,8 +75,11 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 .intro{margin-bottom:2rem}
 .kicker{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.85rem;color:var(--primary)}
 :root[data-contrast="high"] .kicker{color:var(--ink)}
-h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,1.4rem + 2.2vw,3.1rem);line-height:1.08;letter-spacing:-.02em;margin:.4rem 0 .7rem}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(1.9rem,1.35rem + 2vw,2.8rem);line-height:1.12;letter-spacing:-.02em;margin:.4rem 0 .7rem}
 .lead{color:var(--ink-2);font-size:1.125rem;max-width:50rem;margin-bottom:1.4rem}
+.intro h1:first-child{margin-top:0}
+/* Negritas dentro de frases: un poco más finas para que no se ensanchen */
+.lead strong,.guide-step p strong,.card-head p strong,.card-desc strong,.step-flow-hint strong{font-weight:600}
 
 /* Guía rápida de 3 pasos */
 .QuickGuide{
@@ -117,17 +120,17 @@ h1{font-family:var(--display);font-weight:600;font-size:clamp(2rem,1.4rem + 2.2v
 .card-head{display:flex;gap:.9rem;align-items:flex-start}
 .card-head-flex{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.8rem;flex:1}
 .num{
-  flex:none;font-family:var(--display);font-weight:500;font-size:2.2rem;line-height:.9;
-  color:var(--primary);font-variant-numeric:lining-nums;min-width:1.45em;
+  flex:none;font-family:var(--display);font-weight:700;font-size:2.1rem;line-height:.9;
+  color:var(--primary);font-variant-numeric:lining-nums;min-width:1.1em;
 }
 :root[data-contrast="high"] .num{color:var(--ink)}
-.card h2{font-family:var(--display);font-weight:600;font-size:1.35rem;line-height:1.2;letter-spacing:-.01em}
+.card h2{font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1.2;letter-spacing:-.015em}
 .card h2 small{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.04em;vertical-align:.25em;margin-left:.3em;padding:.15em .45em;border:1.5px solid var(--line-strong);border-radius:.35em;white-space:nowrap}
 .card-head p{color:var(--ink-2);margin-top:.2rem;font-size:.98rem}
 
 .step-flow-hint{
   display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem;
-  font-size:.88rem;color:var(--ink-2);background:var(--bg);
+  font-size:.92rem;color:var(--ink-2);background:var(--bg);
   padding:.55rem .8rem;border-radius:.6rem;border:1px dashed var(--line-strong);
 }
 
@@ -189,7 +192,7 @@ legend{padding:0;margin-bottom:.35rem}
 
 /* Tabla de Historial y Auditoría (HU-08) */
 .table-wrap{overflow-x:auto;border:var(--bw) solid var(--line);border-radius:.8rem}
-.hist-table{width:100%;border-collapse:collapse;font-size:.92rem;text-align:left}
+.hist-table{width:100%;border-collapse:collapse;font-size:.95rem;text-align:left}
 .hist-table th,.hist-table td{padding:.65rem .85rem;border-bottom:1px solid var(--line)}
 .hist-table th{background:var(--bg);font-weight:700}
 .hist-status{font-family:var(--mono);font-size:.82rem}
@@ -206,7 +209,7 @@ legend{padding:0;margin-bottom:.35rem}
 }
 @keyframes fade-in{from{opacity:0}}
 .log-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.2rem;border-bottom:1px solid rgb(255 255 255 / .14)}
-.log-head h2{font-family:var(--display);font-weight:600;font-size:1.2rem}
+.log-head h2{font-family:var(--display);font-weight:700;font-size:1.2rem}
 .log-head-actions{display:flex;align-items:center;gap:1rem}
 .link-btn{background:none;border:0;color:var(--log-dim);text-decoration:underline;text-underline-offset:.2em;cursor:pointer;font-weight:600;min-height:2.4em;padding:0 .2em}
 .close-btn{background:none;border:0;color:var(--log-ink);font-weight:700;cursor:pointer;font-size:1rem;padding:.2em .5em}
@@ -268,7 +271,18 @@ legend{padding:0;margin-bottom:.35rem}
 .pill.is-warn{border-color:var(--wait);color:var(--wait)}
 .pill.is-error{border-color:var(--stop);color:var(--stop)}
 .card-head>.pill{flex:none;margin-left:auto;white-space:nowrap}
-.intro .pill{margin-bottom:1.4rem;padding:.55em 1em;border-radius:.8rem;background:var(--surface);color:var(--ink)}
+/* Resumen del grupo (arriba del panel) */
+.group-summary{
+  display:grid;gap:.9rem 1.5rem;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));
+  margin-bottom:1.4rem;padding:1rem 1.25rem;background:var(--surface);
+  border:var(--bw) solid var(--line);border-radius:var(--radius);
+}
+.gs-item{display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.gs-label{font-size:.86rem;font-weight:600;color:var(--ink-2)}
+.gs-value{font-weight:700;overflow-wrap:anywhere}
+.gs-sub{font-weight:400;font-size:.88rem;color:var(--ink-2)}
+.gs-value code{font-family:var(--mono);font-size:.95rem;letter-spacing:.06em}
+.gs-msg{grid-column:1/-1;font-weight:700}
 
 /* Textos y cajas de resultado */
 .card-desc,.muted{color:var(--ink-2);font-size:.95rem}
@@ -276,7 +290,7 @@ legend{padding:0;margin-bottom:.35rem}
 
 /* Sub-formularios: dos paneles parejos, con el botón siempre abajo */
 .sub-box{display:flex;flex-direction:column;gap:.9rem}
-.sub-box h3{font-family:var(--display);font-weight:600;font-size:1.1rem;line-height:1.25}
+.sub-box h3{font-family:var(--display);font-weight:700;font-size:1.1rem;line-height:1.25}
 .grid-2>.sub-box{padding:1.1rem;border:var(--bw) solid var(--line);border-radius:.9rem}
 .sub-box>.btn{align-self:stretch;margin-top:auto}
 
@@ -289,7 +303,7 @@ legend{padding:0;margin-bottom:.35rem}
 /* Botón secundario y campos de solo lectura */
 .btn.ghost{background:transparent}
 .btn.ghost:hover:not([disabled]){background:var(--bg)}
-.field::placeholder{color:var(--ink-2);opacity:.65}
+.field::placeholder{color:var(--ink-2);opacity:.8}
 .field[readonly]{border-style:dashed;background:transparent;color:var(--ink-2)}
 
 /* Tabla de integrantes */
@@ -320,7 +334,7 @@ legend{padding:0;margin-bottom:.35rem}
 .p-dot{flex:none;width:1.6rem;height:1.6rem;display:grid;place-items:center;border:var(--bw) solid var(--line-strong);border-radius:50%;font-family:var(--mono);font-size:.7rem;font-weight:700}
 .p-text{display:flex;flex-direction:column;line-height:1.15}
 .p-label{font-size:.88rem;font-weight:700}
-.p-state{font-size:.74rem;color:var(--ink-2)}
+.p-state{font-size:.8rem;color:var(--ink-2)}
 .progress-list [data-state="hecho"] .p-dot{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
 .progress-list [data-state="curso"] .p-dot{border-style:dashed;border-color:var(--wait);color:var(--wait)}
 .progress-list [data-state="curso"] .p-state{color:var(--wait);font-weight:700}
@@ -384,7 +398,7 @@ legend{padding:0;margin-bottom:.35rem}
   .card{padding:1.1rem 1rem 1.2rem;gap:.9rem}
   .card-head{gap:.7rem}
   .card h2{font-size:1.2rem}
-  .num{font-size:1.8rem;min-width:1.2em}
+  .num{font-size:1.8rem;min-width:1em}
   .grid-2>.sub-box{padding:.9rem}
   .field-wrap.narrow{max-width:none}
   .card>.btn,.card-actions-row>.btn:not(.alert),.push-banner .btn{width:100%}

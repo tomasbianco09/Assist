@@ -4,9 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, func
 import datetime
 import random
+import re
 import uuid
 import qrcode
 import io
@@ -41,6 +42,49 @@ def asegurar_columnas_sprint2():
 
 
 asegurar_columnas_sprint2()
+
+
+# ==========================================
+# Nombres con mayúscula inicial
+# ==========================================
+# Formato mínimo de un correo: algo@dominio.ext (sin espacios, con punto en el dominio)
+EMAIL_VALIDO = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$")
+
+PARTICULAS_NOMBRE = {"de", "del", "la", "las", "los", "el", "y", "e", "da", "das", "do", "dos", "di", "van", "von"}
+
+
+def capitalizar_nombre(nombre):
+    """'rosa fernández' -> 'Rosa Fernández'.
+    Solo toca palabras escritas enteras en minúscula y respeta las partículas (de, del, la...).
+    Lo que ya tiene mayúsculas ('Leonel Messi', 'McDonald') queda igual."""
+    resultado = []
+    for i, palabra in enumerate((nombre or "").split()):
+        if palabra != palabra.lower() or (i > 0 and palabra in PARTICULAS_NOMBRE):
+            resultado.append(palabra)
+        else:
+            resultado.append(palabra[:1].upper() + palabra[1:])
+    return " ".join(resultado)
+
+
+def arreglar_nombres_existentes():
+    """Corrige los nombres que ya estaban guardados en minúscula. Es seguro correrlo
+    en cada arranque: si todo está bien escrito, no cambia nada."""
+    db = SessionLocal()
+    try:
+        for usuario in db.query(models.UsuarioModel).all():
+            nuevo = capitalizar_nombre(usuario.nombre)
+            if nuevo and nuevo != usuario.nombre:
+                usuario.nombre = nuevo
+        for grupo in db.query(models.GrupoFamiliarModel).all():
+            nuevo = capitalizar_nombre(grupo.nombre)
+            if nuevo and nuevo != grupo.nombre:
+                grupo.nombre = nuevo
+        db.commit()
+    finally:
+        db.close()
+
+
+arreglar_nombres_existentes()
 
 app = FastAPI(
     title="Assist API",
@@ -205,13 +249,20 @@ def read_root():
 # ==========================================
 @app.post("/usuarios/", response_model=dict)
 def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
-    db_usuario = db.query(models.UsuarioModel).filter(models.UsuarioModel.email == usuario.email).first()
+    # El correo se guarda siempre en minúsculas y sin espacios, así "Rosa@Correo.com" y "rosa@correo.com" son la misma cuenta
+    email = usuario.email.strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="El correo no puede estar vacío")
+    if not EMAIL_VALIDO.match(email):
+        raise HTTPException(status_code=400, detail="Ingresá un correo válido, por ejemplo nombre@correo.com")
+
+    db_usuario = db.query(models.UsuarioModel).filter(func.lower(models.UsuarioModel.email) == email).first()
     if db_usuario:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
 
     nuevo_usuario = models.UsuarioModel(
-        nombre=usuario.nombre,
-        email=usuario.email,
+        nombre=capitalizar_nombre(usuario.nombre),
+        email=email,
         rol=usuario.rol,
         conectado=1
     )
@@ -878,7 +929,7 @@ def crear_grupo_familiar(req: schemas.GrupoCrearRequest, db: Session = Depends(g
 
     token = generar_token_6_digitos(db)
     grupo = models.GrupoFamiliarModel(
-        nombre=req.nombre or f"Grupo de {adulto.nombre}",
+        nombre=capitalizar_nombre(req.nombre) or f"Grupo de {adulto.nombre}",
         adulto_id=adulto.id,
         codigo_token=token,
         creado_por_familiar_id=req.familiar_admin_id

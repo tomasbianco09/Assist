@@ -5,14 +5,14 @@
    - Los colores viven en variables: el alto contraste solo las reemplaza. */
 
 :root{
-  --bg:#F4EEE3; --surface:#FFFCF6; --ink:#1C2B2D; --ink-2:#4D5B5C;
+  --bg:#F4EEE3; --surface:#FFFCF6; --ink:#1C2B2D; --ink-2:#3B4849;
   --line:#D9CEBC; --line-strong:#1C2B2D;
   --primary:#245C43; --primary-hover:#1B4A35; --primary-ink:#FFFFFF;
   --stop:#A8321F; --stop-ink:#FFFFFF;
   --wait:#9A5B0B; --ok-bg:#E3EEE6; --err-bg:#F8E4DE;
   --focus:#1D4ED8; --backdrop:rgb(28 43 45 / .5);
   --bw:2px; --radius:1.1rem;
-  --display:'Fraunces',Georgia,'Times New Roman',serif;
+  --display:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --text:'Atkinson Hyperlegible Next','Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
   --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .28 0 0 0 0 .2 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   color-scheme:light;
@@ -42,7 +42,7 @@ body{
   background:var(--bg) var(--grain);min-height:100dvh;
   overflow-wrap:break-word;
 }
-button,input{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 .app{
@@ -56,7 +56,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
   padding:calc(.9rem + env(safe-area-inset-top)) 1.25rem .9rem;
   border-bottom:var(--bw) solid var(--line);
 }
-.brand{display:inline-flex;align-items:center;gap:.45em;font-family:var(--display);font-weight:600;font-size:1.5rem;letter-spacing:-.01em}
+.brand{display:inline-flex;align-items:center;gap:.45em;font-family:var(--display);font-weight:800;font-size:1.4rem;letter-spacing:-.02em}
 .mark{width:1.3em;height:1.3em}
 .mark rect{fill:var(--primary);stroke:none}
 .mark circle{stroke:var(--primary-ink);stroke-width:2.4}
@@ -73,17 +73,18 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 /* ---------- Tipografía y bloques ---------- */
 .stack{display:flex;flex-direction:column;gap:1.25rem;flex:1}
 .center{align-items:center;text-align:center;justify-content:center}
-.kicker{font-weight:700;color:var(--ink-2);letter-spacing:.02em}
-h1{font-family:var(--display);font-weight:600;font-size:2.1rem;line-height:1.12;letter-spacing:-.015em;font-variation-settings:"SOFT" 50;hyphens:auto}
+.kicker{font-weight:700;font-size:1.1rem;color:var(--ink-2);letter-spacing:.01em}
+h1{font-family:var(--display);font-weight:700;font-size:2rem;line-height:1.15;letter-spacing:-.02em;hyphens:auto}
 h1:focus{outline:none}
-.lead{color:var(--ink-2);font-size:1.0625rem}
+.lead{color:var(--ink-2);font-size:1.125rem;line-height:1.6}
+.lead strong,.small strong{font-weight:600}
 .small{font-size:1rem}
 
 /* Ilustración "familiar → tu teléfono" */
 .request{display:flex;align-items:center;justify-content:center;gap:.9rem;margin-block:.25rem}
 .avatar{
   width:2.7em;height:2.7em;flex:none;border-radius:50%;display:grid;place-items:center;
-  background:var(--ink);color:var(--bg);font-family:var(--display);font-size:1.6rem;font-weight:600;line-height:1;
+  background:var(--ink);color:var(--bg);font-family:var(--display);font-size:1.6rem;font-weight:700;line-height:1;
 }
 .link{flex:0 1 2.5rem;min-width:1rem;border-top:.25rem dotted var(--wait)}
 .link.on{border-top-style:solid;border-color:var(--primary)}
@@ -128,9 +129,10 @@ h1:focus{outline:none}
 .live{display:flex;align-items:center;gap:.75rem;background:var(--primary);color:var(--primary-ink);padding:1rem 1.1rem;border-radius:var(--radius);font-weight:700}
 .dot{flex:none;width:.8em;height:.8em;border-radius:50%;background:currentColor;animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.3}}
+/* Es información, no un botón: sin borde punteado, con el punto que late para indicar que espera. */
 .status{
-  display:inline-flex;align-items:center;gap:.6rem;padding:.45em 1em;
-  border:var(--bw) dashed var(--wait);border-radius:999px;color:var(--ink);font-weight:600;
+  display:inline-flex;align-items:center;gap:.6rem;padding:.45em 1.1em;
+  background:var(--surface);border:var(--bw) solid var(--line);border-radius:999px;color:var(--ink);font-weight:600;
 }
 .status .dot{color:var(--wait)}
 .note{border:var(--bw) solid var(--primary);background:var(--ok-bg);border-radius:var(--radius);padding:.9rem 1rem;font-weight:600}
@@ -146,6 +148,15 @@ label{font-weight:700}
   border:var(--bw) solid var(--line-strong);border-radius:var(--radius);background:var(--surface);
 }
 .field::placeholder{color:var(--ink-2);opacity:1}
+/* Selector con la misma tipografía y una flecha propia, igual de grande que el resto */
+select.field{
+  appearance:none;-webkit-appearance:none;padding-right:2.8em;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231C2B2D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .9em center;background-size:1.2em;
+}
+:root[data-contrast="high"] select.field{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
 
 /* ---------- Hoja de opciones ---------- */
 .sheet{
@@ -159,7 +170,7 @@ label{font-weight:700}
 .sheet[open]{display:flex;flex-direction:column;gap:1.1rem;animation:sheet-in .25s cubic-bezier(.2,.7,.2,1)}
 @keyframes sheet-in{from{transform:translateY(2rem);opacity:0}}
 .sheet-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.5rem}
-.sheet h2{font-family:var(--display);font-weight:600;font-size:1.75rem;line-height:1.15}
+.sheet h2{font-family:var(--display);font-weight:700;font-size:1.65rem;line-height:1.15;letter-spacing:-.015em}
 .close-btn{min-height:2.75em;padding:.5em 1.1em;border:var(--bw) solid var(--line-strong);border-radius:999px;background:transparent;font-weight:700;cursor:pointer}
 
 .toggle{
@@ -182,7 +193,7 @@ label{font-weight:700}
 
 /* ---------- Guía "Así funciona" (pantalla de inicio) ---------- */
 .guide{margin-top:1.75rem;display:flex;flex-direction:column;gap:.9rem}
-.guide h2{font-family:var(--display);font-weight:600;font-size:1.4rem;line-height:1.2;letter-spacing:-.01em}
+.guide h2{font-family:var(--display);font-weight:700;font-size:1.35rem;line-height:1.2;letter-spacing:-.015em}
 .guide-steps li{align-items:flex-start}
 .guide-text{display:flex;flex-direction:column;gap:.15rem}
 .guide-text strong{font-size:1.1rem;line-height:1.3}
