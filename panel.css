@@ -60,7 +60,7 @@ svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-lin
 
 .page{max-width:var(--col);margin:0 auto;padding:2rem 1.25rem calc(3rem + env(safe-area-inset-bottom))}
 
-/* Banner Push SOS (SCRUM-49) */
+/* Banner de alerta SOS */
 .push-banner{
   display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;
   padding:1.1rem 1.4rem;margin-bottom:1.75rem;border:var(--bw) solid var(--stop);
@@ -125,7 +125,6 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(1.9rem,1.35rem + 2
 }
 :root[data-contrast="high"] .num{color:var(--ink)}
 .card h2{font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1.2;letter-spacing:-.015em}
-.card h2 small{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.04em;vertical-align:.25em;margin-left:.3em;padding:.15em .45em;border:1.5px solid var(--line-strong);border-radius:.35em;white-space:nowrap}
 .card-head p{color:var(--ink-2);margin-top:.2rem;font-size:.98rem}
 
 .step-flow-hint{
@@ -185,12 +184,12 @@ legend{padding:0;margin-bottom:.35rem}
 .badge.live{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
 .badge.off{color:var(--ink-2)}
 
-/* Mapa Leaflet (HU-06) */
+/* Mapa de ubicación (Leaflet) */
 .map-wrap{display:flex;flex-direction:column;gap:.5rem}
 .map-canvas{width:100%;height:16rem;border-radius:.8rem;border:var(--bw) solid var(--line-strong);z-index:1}
 .map-coords{font-family:var(--mono);font-size:.85rem;color:var(--ink-2)}
 
-/* Tabla de Historial y Auditoría (HU-08) */
+/* Tabla de historial y auditoría */
 .table-wrap{overflow-x:auto;border:var(--bw) solid var(--line);border-radius:.8rem}
 .hist-table{width:100%;border-collapse:collapse;font-size:.95rem;text-align:left}
 .hist-table th,.hist-table td{padding:.65rem .85rem;border-bottom:1px solid var(--line)}
